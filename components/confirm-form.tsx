@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { confirmAndGenerate } from "@/app/actions/groceries";
+import { Spinner } from "@/components/spinner";
 import type { DraftLine, Ingredient, PantryItem } from "@/lib/types";
 
 type PantryDraft = {
@@ -46,7 +47,7 @@ export function ConfirmForm({
 
   return (
     <div className="mx-auto max-w-[640px]">
-      <h1 className="font-display text-[2.15rem] font-semibold leading-none tracking-tight">Final check</h1>
+      <h1 className="fade-up font-display text-[2.15rem] font-semibold leading-none tracking-tight">Final check</h1>
       <p className="mt-3 text-muted">Fix names, quantities, and units before matching. Nothing is planned until you generate.</p>
 
       {kitchen.length > 0 ? (
@@ -64,7 +65,7 @@ export function ConfirmForm({
                         rows.map((r, idx) => (idx === i ? { ...r, keep: !r.keep } : r)),
                       )
                     }
-                    className="rounded-full px-3 text-sm font-semibold text-coral"
+                    className="pressable rounded-full px-3 text-sm font-semibold text-coral-text"
                   >
                     {row.keep ? "Drop" : "Keep"}
                   </button>
@@ -144,7 +145,7 @@ export function ConfirmForm({
                 <button
                   type="button"
                   onClick={() => setItems((rows) => rows.filter((_, idx) => idx !== i))}
-                  className="rounded-full px-2 text-sm font-semibold text-coral"
+                  className="pressable rounded-full px-2 text-sm font-semibold text-coral-text"
                   aria-label="Delete line"
                 >
                   Delete
@@ -156,7 +157,7 @@ export function ConfirmForm({
         <button
           type="button"
           onClick={() => setItems((rows) => [...rows, blankLine()])}
-          className="mt-3 rounded-full bg-teal-soft px-4 py-2 text-sm font-semibold text-teal"
+          className="pressable mt-3 rounded-full bg-teal-soft px-4 py-2 text-sm font-semibold text-teal"
         >
           Add a line
         </button>
@@ -168,7 +169,7 @@ export function ConfirmForm({
         ))}
       </datalist>
 
-      {error ? <p className="mt-4 text-sm text-coral">{error}</p> : null}
+      {error ? <p className="mt-4 text-sm text-coral-text">{error}</p> : null}
 
       <button
         type="button"
@@ -181,8 +182,9 @@ export function ConfirmForm({
             else router.push(`/plans/pick?generation=${result.generationId}`);
           })
         }
-        className="mt-8 w-full rounded-full bg-teal py-4 font-semibold text-white disabled:opacity-60"
+        className="pressable mt-8 flex w-full items-center justify-center gap-2 rounded-full bg-teal py-4 font-semibold text-white disabled:opacity-60"
       >
+        {pending ? <Spinner /> : null}
         {pending ? "Generating plans…" : "Generate plans"}
       </button>
     </div>

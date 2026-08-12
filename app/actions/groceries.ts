@@ -2,8 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { persistGeneration } from "@/lib/plans";
-import { createReceiptFromCapture, replaceReceiptItems } from "@/lib/receipts";
+import { createReceiptFromCapture, createReceiptFromPreset, replaceReceiptItems } from "@/lib/receipts";
 import { upsertLeftover } from "@/lib/pantry";
+import { getSampleHaul, type SampleHaulId } from "@/lib/sample-hauls";
 import type { DraftLine, ReceiptSource } from "@/lib/types";
 
 export async function captureGroceries(formData: FormData) {
@@ -47,6 +48,17 @@ export async function captureGroceries(formData: FormData) {
     return { ok: true as const, receiptId: result.receiptId };
   } catch (error) {
     return { ok: false as const, error: error instanceof Error ? error.message : "Could not read that list" };
+  }
+}
+
+export async function loadSampleHaul(id: SampleHaulId) {
+  try {
+    const haul = getSampleHaul(id);
+    const result = await createReceiptFromPreset(haul.items, haul.label);
+    revalidatePath("/groceries");
+    return { ok: true as const, receiptId: result.receiptId };
+  } catch (error) {
+    return { ok: false as const, error: error instanceof Error ? error.message : "Could not load sample haul" };
   }
 }
 

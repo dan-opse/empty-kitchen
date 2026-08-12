@@ -2,19 +2,24 @@
 
 import { useState, useTransition } from "react";
 import { clearMeal, relocateMeal, shiftMealBack } from "@/app/actions/plans";
-import type { MealDetail, MealSlot } from "@/lib/types";
+import { addDaysISO, dateNumber, weekdayShort } from "@/lib/dates";
+import type { MealDetail, MealSlot, PlanSlot } from "@/lib/types";
 
 export function MealDetailPanel({
   planId,
   day,
   meal,
   detail,
+  startDate,
+  weekSlots,
   onClose,
 }: {
   planId: string;
   day: number;
   meal: MealSlot;
   detail: MealDetail;
+  startDate: string;
+  weekSlots: PlanSlot[];
   onClose: () => void;
 }) {
   const [pending, start] = useTransition();
@@ -29,12 +34,14 @@ export function MealDetailPanel({
     });
   }
 
+  const iso = addDaysISO(startDate, day - 1);
+
   return (
-    <div className="flex h-full flex-col">
+    <div className="fade-in flex h-full flex-col">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-label">
-            {meal} · day {day}
+            {weekdayShort(iso)} {dateNumber(iso)} · {meal}
           </p>
           <h2 className="font-display text-2xl font-semibold">
             {detail.slot.recipe_name ?? "Empty slot"}
@@ -44,9 +51,13 @@ export function MealDetailPanel({
             {detail.slot.modified ? " · modified" : ""}
           </p>
         </div>
-        <button type="button" onClick={onClose} className="rounded-full px-3 text-sm font-semibold text-muted">
-          Close
-        </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="pressable inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold text-muted hover:bg-canvas-deep hover:text-ink"
+          >
+            Close
+          </button>
       </div>
 
       {detail.ingredients.length > 0 ? (
@@ -58,7 +69,7 @@ export function MealDetailPanel({
                 {ing.swappedFrom ? (
                   <span className="text-muted"> (for {ing.swappedFrom})</span>
                 ) : null}
-                {ing.missing ? <span className="text-coral"> · missing optional</span> : null}
+                {ing.missing ? <span className="text-coral-text"> · missing optional</span> : null}
               </span>
               <span className="text-muted">
                 {ing.quantity} {ing.unit}
@@ -72,7 +83,7 @@ export function MealDetailPanel({
         <p className="mb-4 whitespace-pre-wrap text-sm leading-6 text-ink/80">{detail.instructions}</p>
       ) : null}
 
-      {error ? <p className="mb-3 text-sm text-coral">{error}</p> : null}
+      {error ? <p className="mb-3 text-sm text-coral-text">{error}</p> : null}
 
       {detail.slot.recipe_id ? (
         <div className="mt-auto grid gap-2">
@@ -80,7 +91,7 @@ export function MealDetailPanel({
             type="button"
             disabled={pending}
             onClick={() => run(() => shiftMealBack(planId, day, meal))}
-            className="rounded-full bg-teal px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+            className="btn-primary pressable flex w-full items-center justify-center disabled:opacity-60"
           >
             Push back a day
           </button>
@@ -88,15 +99,16 @@ export function MealDetailPanel({
             type="button"
             disabled={pending}
             onClick={() => setMoveOpen((v) => !v)}
-            className="rounded-full bg-teal-soft px-4 py-3 text-sm font-semibold text-teal"
+            aria-expanded={moveOpen}
+            className="btn-secondary pressable flex w-full items-center justify-center disabled:opacity-60"
           >
-            Move to another slot
+            {moveOpen ? "Hide slots" : "Move to another slot"}
           </button>
           <button
             type="button"
             disabled={pending}
             onClick={() => run(() => clearMeal(planId, day, meal))}
-            className="rounded-full px-4 py-3 text-sm font-semibold text-coral"
+            className="pressable flex items-center justify-center rounded-full px-4 py-3 text-sm font-semibold text-coral-text hover:bg-coral/10 disabled:opacity-60"
           >
             Remove
           </button>
@@ -104,20 +116,34 @@ export function MealDetailPanel({
       ) : null}
 
       {moveOpen ? (
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          {Array.from({ length: 7 }, (_, i) => i + 1).flatMap((d) =>
-            (["lunch", "dinner"] as const).map((m) => (
-              <button
-                key={`${d}-${m}`}
-                type="button"
-                disabled={pending || (d === day && m === meal)}
-                onClick={() => run(() => relocateMeal(planId, day, meal, d, m))}
-                className="rounded-2xl bg-white px-3 py-2 text-left text-sm font-semibold disabled:opacity-40"
-              >
-                Day {d} {m}
-              </button>
-            )),
-          )}
+        <div className="fade-up mt-3 grid grid-cols-2 gap-2">
+          {Array.from({ length: 7 }, (_, i) => i + 1).flatMap((d) => {
+            const cellIso = addDaysISO(startDate, d - 1);
+            return (["lunch", "dinner"] as const).map((m) => {
+              const isCurrent = d === day && m === meal;
+              const occupant = weekSlots.find((s) => s.day_number === d && s.meal_slot === m);
+              return (
+                <button
+                  key={`${d}-${m}`}
+                  type="button"
+                  disabled={pending || isCurrent}
+                  onClick={() => run(() => relocateMeal(planId, day, meal, d, m))}
+                  className="pressable rounded-2xl bg-white px-3 py-2 text-left shadow-[var(--shadow)] transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(22,40,48,0.1)] disabled:opacity-40"
+                >
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-label">
+                    {weekdayShort(cellIso)} {dateNumber(cellIso)} · {m}
+                  </p>
+                  <p className="mt-0.5 truncate text-sm font-semibold">
+                    {isCurrent
+                      ? "Currently here"
+                      : occupant?.recipe_name
+                        ? `Swap with ${occupant.recipe_name}${occupant.is_leftover ? " (leftover)" : ""}`
+                        : "Empty slot"}
+                  </p>
+                </button>
+              );
+            });
+          })}
         </div>
       ) : null}
     </div>

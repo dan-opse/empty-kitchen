@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { importSampleCatalog, importUploadedCsv } from "@/app/actions/import";
+import { Spinner } from "@/components/spinner";
 
 export function ImportForm() {
   const [pending, start] = useTransition();
@@ -10,7 +11,7 @@ export function ImportForm() {
 
   return (
     <div className="mx-auto max-w-[640px]">
-      <h1 className="font-display text-[2.15rem] font-semibold leading-none tracking-tight">Import recipes</h1>
+      <h1 className="fade-up font-display text-[2.15rem] font-semibold leading-none tracking-tight">Import recipes</h1>
       <p className="mt-3 text-muted">
         Google Sheets is authoring-only. Export three CSVs and upsert them here. The app never writes back to Sheets.
       </p>
@@ -26,8 +27,9 @@ export function ImportForm() {
             else setMessage(`Loaded ${result.counts.recipes} sample recipes.`);
           })
         }
-        className="mt-6 w-full rounded-full bg-teal py-3 font-semibold text-white disabled:opacity-60"
+        className="pressable mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-teal py-3 font-semibold text-white disabled:opacity-60"
       >
+        {pending ? <Spinner /> : null}
         Load sample recipes
       </button>
 
@@ -59,14 +61,15 @@ export function ImportForm() {
         <button
           type="submit"
           disabled={pending}
-          className="w-full rounded-full bg-teal-soft py-3 font-semibold text-teal disabled:opacity-60"
+          className="pressable flex w-full items-center justify-center gap-2 rounded-full bg-teal-soft py-3 font-semibold text-teal disabled:opacity-60"
         >
+          {pending ? <Spinner /> : null}
           Import CSVs
         </button>
       </form>
 
-      {message ? <p className="mt-4 font-semibold text-teal">{message}</p> : null}
-      {error ? <p className="mt-4 text-sm text-coral">{error}</p> : null}
+      {message ? <p className="fade-up mt-4 font-semibold text-teal">{message}</p> : null}
+      {error ? <p className="mt-4 text-sm text-coral-text">{error}</p> : null}
     </div>
   );
 }

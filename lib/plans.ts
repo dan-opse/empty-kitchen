@@ -52,7 +52,9 @@ export async function persistGeneration(input: {
   });
 
   if (generated.length === 0) {
-    throw new Error("No feasible recipes for this haul. Add recipes or confirm more ingredients.");
+    throw new Error(
+      "No feasible recipes for this haul. Each sample recipe needs every required ingredient (staples aside). Try “Test haul that works” on Add groceries, or add more items on this screen.",
+    );
   }
 
   const sb = getSupabase();

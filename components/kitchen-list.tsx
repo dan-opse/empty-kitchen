@@ -7,12 +7,12 @@ import type { PantryItem } from "@/lib/types";
 export function KitchenList({ leftovers, staples }: { leftovers: PantryItem[]; staples: PantryItem[] }) {
   return (
     <div className="mx-auto max-w-[640px]">
-      <h1 className="font-display text-[2.15rem] font-semibold leading-none tracking-tight">Kitchen</h1>
+      <h1 className="fade-up font-display text-[2.15rem] font-semibold leading-none tracking-tight">Kitchen</h1>
       <p className="mt-3 text-muted">
         Leftovers carry into the next scan only if they are still here. Staples are assumed in stock until you mark them out.
       </p>
 
-      <section className="mt-8">
+      <section className="fade-up mt-8">
         <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-label">Leftover / unused</h2>
         {leftovers.length === 0 ? (
           <p className="rounded-[20px] border border-dashed border-line px-4 py-5 text-sm text-muted">
@@ -27,7 +27,7 @@ export function KitchenList({ leftovers, staples }: { leftovers: PantryItem[]; s
         )}
       </section>
 
-      <section className="mt-8">
+      <section className="fade-up mt-8" style={{ animationDelay: "60ms" }}>
         <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-label">Staples</h2>
         <ul className="space-y-2">
           {staples.map((item) => (
@@ -46,26 +46,35 @@ function PantryRow({ item, leftover }: { item: PantryItem; leftover?: boolean })
     leftover && item.quantity != null
       ? `${item.quantity} ${item.unit ?? ""}`.trim()
       : null;
+  const statusLabel = inStock ? (leftover ? "Still have" : "In stock") : "Ran out";
+  const actionLabel = inStock ? "Mark ran out" : leftover ? "Mark still have" : "Restock";
 
   return (
     <li className="flex items-center justify-between gap-3 rounded-[20px] bg-card px-4 py-3 shadow-[var(--shadow)]">
-      <div>
-        <p className="font-semibold">{item.ingredient_name}</p>
-        <p className="text-sm text-muted">{qty ?? (inStock ? "In stock" : "Ran out")}</p>
+      <div className="min-w-0">
+        <p className="truncate font-semibold">{item.ingredient_name}</p>
+        <p className="mt-0.5 flex items-center gap-1.5 text-sm text-muted">
+          <span
+            aria-hidden
+            className={`inline-block h-1.5 w-1.5 rounded-full ${inStock ? "bg-teal" : "bg-coral-text"}`}
+          />
+          {qty ? `${qty} · ${statusLabel}` : statusLabel}
+        </p>
       </div>
       <button
         type="button"
         disabled={pending}
+        aria-pressed={!inStock}
         onClick={() =>
           start(async () => {
             await markPantryStatus(item.pantry_item_id, inStock ? "ran_out" : "in_stock");
           })
         }
-        className={`rounded-full px-4 text-sm font-semibold ${
-          inStock ? "bg-teal-soft text-teal" : "bg-canvas-deep text-muted"
+        className={`pressable flex min-h-11 shrink-0 items-center justify-center rounded-full px-4 text-sm font-semibold transition-colors disabled:opacity-60 ${
+          inStock ? "bg-canvas-deep text-ink/80 hover:bg-canvas" : "bg-teal-soft text-teal"
         }`}
       >
-        {inStock ? (leftover ? "Still have" : "In stock") : "Ran out"}
+        {actionLabel}
       </button>
     </li>
   );

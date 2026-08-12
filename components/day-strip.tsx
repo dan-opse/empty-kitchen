@@ -7,11 +7,13 @@ export function DayStrip({
   selectedDay,
   onSelect,
   compact = false,
+  disabled = false,
 }: {
   startDate: string;
   selectedDay: number;
   onSelect: (day: number) => void;
   compact?: boolean;
+  disabled?: boolean;
 }) {
   const days = Array.from({ length: 7 }, (_, i) => {
     const iso = addDaysISO(startDate, i);
@@ -26,15 +28,19 @@ export function DayStrip({
           <button
             key={d.day}
             type="button"
+            disabled={disabled}
             onClick={() => onSelect(d.day)}
-            className={`flex min-h-16 min-w-12 flex-col items-center justify-center rounded-full px-2 text-center ${
-              selected ? "bg-teal text-white" : "text-muted"
-            }`}
+            className={`pressable flex min-h-16 min-w-12 flex-col items-center justify-center rounded-full px-2 text-center disabled:cursor-not-allowed ${
+              selected
+                ? "bg-teal text-white shadow-[0_6px_16px_rgba(0,90,84,0.22)]"
+                : "text-muted hover:bg-white/70 hover:text-ink"
+            } ${disabled ? "opacity-50" : ""}`}
             aria-pressed={selected}
+            aria-disabled={disabled}
             aria-label={`${d.label} ${d.num}`}
           >
             <span className="text-[11px] font-bold tracking-wide">{d.label}</span>
-            <span className="font-display text-lg font-semibold leading-none">{d.num}</span>
+            <span className="font-display text-lg font-semibold leading-none tabular-nums">{d.num}</span>
           </button>
         );
       })}

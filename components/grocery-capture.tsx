@@ -2,7 +2,9 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { captureGroceries } from "@/app/actions/groceries";
+import { captureGroceries, loadSampleHaul } from "@/app/actions/groceries";
+import { SAMPLE_HAULS } from "@/lib/sample-hauls";
+import { Spinner } from "@/components/spinner";
 
 export function GroceryCapture() {
   const router = useRouter();
@@ -41,7 +43,7 @@ export function GroceryCapture() {
 
   return (
     <div>
-      <h1 className="font-display text-[2.15rem] font-semibold leading-none tracking-tight">Add groceries</h1>
+      <h1 className="fade-up font-display text-[2.15rem] font-semibold leading-none tracking-tight">Add groceries</h1>
       <p className="mt-3 max-w-md text-muted">
         Photo, library, or an iPhone document scan (PDF). If the file is unusable, type a short list.
       </p>
@@ -100,16 +102,46 @@ export function GroceryCapture() {
             type="button"
             onClick={submitList}
             disabled={pending}
-            className="mt-3 w-full rounded-full bg-teal py-3 font-semibold text-white disabled:opacity-60"
+            className="pressable mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-teal py-3 font-semibold text-white disabled:opacity-60"
           >
+            {pending ? <Spinner /> : null}
             Continue
           </button>
         </div>
       ) : null}
 
-      {error ? <p className="mt-4 text-sm text-coral">{error}</p> : null}
+      <section className="mt-8">
+        <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-label">Sample hauls</h2>
+        <p className="mt-2 text-sm text-muted">
+          Skip the camera. These lists use exact sample-recipe names and quantities so you can test generate vs no-match.
+        </p>
+        <div className="mt-3 grid gap-3">
+          {SAMPLE_HAULS.map((haul) => (
+            <button
+              key={haul.id}
+              type="button"
+              disabled={pending}
+              onClick={() =>
+                start(async () => {
+                  setError(null);
+                  const result = await loadSampleHaul(haul.id);
+                  if (!result.ok) setError(result.error);
+                  else router.push(`/groceries/confirm?receipt=${result.receiptId}`);
+                })
+              }
+              className="pressable rounded-[20px] bg-card p-4 text-left shadow-[var(--shadow)] transition-shadow duration-200 hover:shadow-[0_10px_32px_rgba(22,40,48,0.12)] disabled:opacity-60"
+            >
+              <p className="font-semibold">{haul.label}</p>
+              <p className="mt-1 text-sm text-muted">{haul.hint}</p>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {error ? <p className="fade-up mt-4 text-sm text-coral-text">{error}</p> : null}
       {pending ? (
-        <div className="mt-6 rounded-[20px] bg-white/70 px-4 py-5 text-center font-semibold text-teal">
+        <div className="fade-up mt-6 flex items-center justify-center gap-2 rounded-[20px] bg-white/70 px-4 py-5 text-center font-semibold text-teal">
+          <Spinner />
           Reading the list…
         </div>
       ) : null}
@@ -130,7 +162,7 @@ function Choice({
     <button
       type="button"
       onClick={onClick}
-      className="flex min-h-28 flex-col items-center justify-center gap-3 rounded-[24px] bg-card p-4 shadow-[var(--shadow)]"
+      className="pressable flex min-h-28 flex-col items-center justify-center gap-3 rounded-[24px] bg-card p-4 shadow-[var(--shadow)] transition-shadow duration-200 hover:shadow-[0_10px_32px_rgba(22,40,48,0.12)]"
     >
       <span className="grid h-14 w-14 place-items-center rounded-full bg-teal-soft text-teal">{icon}</span>
       <span className="text-sm font-semibold">{label}</span>

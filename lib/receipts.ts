@@ -68,6 +68,46 @@ export async function createReceiptFromCapture(input: {
   return { receiptId, items: extracted.items, raw_ocr_text: extracted.raw_ocr_text };
 }
 
+export async function createReceiptFromPreset(items: DraftLine[], label: string): Promise<{ receiptId: string }> {
+  const sb = getSupabase();
+  const ingredients = await listIngredients();
+  if (ingredients.length === 0) {
+    throw new Error("No ingredients imported yet. Import the sample CSV first.");
+  }
+  const names = new Set(ingredients.map((i) => i.ingredient_name));
+  const unknown = items.filter((i) => !names.has(i.matched_ingredient_name));
+  if (unknown.length) {
+    throw new Error(`Unknown ingredients in sample haul: ${unknown.map((i) => i.matched_ingredient_name).join(", ")}`);
+  }
+
+  const receiptId = newId("rec");
+  const { error } = await sb.from("receipts").insert({
+    receipt_id: receiptId,
+    scan_date: todayISO(),
+    source: "manual",
+    original_filename: null,
+    mime_type: null,
+    storage_path: null,
+    raw_ocr_text: label,
+    file_deleted_at: null,
+  });
+  if (error) throw error;
+
+  const { error: itemErr } = await sb.from("receipt_items").insert(
+    items.map((item) => ({
+      receipt_id: receiptId,
+      raw_line_text: item.raw_line_text,
+      matched_ingredient_name: item.matched_ingredient_name || null,
+      quantity: item.quantity,
+      unit: item.unit,
+      price: item.price,
+      confirmed_by_user: false,
+    })),
+  );
+  if (itemErr) throw itemErr;
+  return { receiptId };
+}
+
 export async function getReceiptDraft(receiptId: string): Promise<{
   receipt_id: string;
   items: DraftLine[];
