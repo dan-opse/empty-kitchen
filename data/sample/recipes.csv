@@ -1,0 +1,13 @@
+recipe_id,recipe_name,servings,prep_time_minutes,cuisine_tag,instructions,notes
+R001,Lemon garlic chicken,1,25,chicken,"Pat chicken dry. Sear in olive oil, then finish with lemon, garlic, salt, and pepper. Steam broccoli alongside.","High-perish protein — cook early in the week."
+R002,Sheet pan salmon,1,30,seafood,"Roast salmon and zucchini at 400°F with olive oil, lemon, salt, and pepper until the fish flakes.","Canned tuna can stand in if salmon is gone."
+R003,Turkey tomato pasta,1,40,pasta,"Brown turkey with onion and garlic. Add canned tomatoes and simmer. Toss with pasta and parmesan."
+R004,Spinach omelette,1,15,eggs,"Beat eggs with a splash of milk if you have it. Fold in wilted spinach. Cook in butter."
+R005,Chickpea tomato stew,1,35,stew,"Sweat onion and garlic in olive oil. Add chickpeas, tomatoes, and spinach. Simmer until thick."
+R006,Tofu broccoli stir fry,1,25,stir-fry,"Sear tofu. Stir-fry broccoli and pepper. Sauce with soy, garlic, ginger, sesame oil. Serve over rice."
+R007,Tuna greens,1,10,salad,"Flake tuna over mixed greens. Dress with lemon, olive oil, and salt."
+R008,Chicken rice bowl,1,30,chicken,"Cook rice. Sear chicken. Steam broccoli. Finish with soy, garlic, and sesame oil."
+R009,Zucchini lemon pasta,1,25,pasta,"Boil pasta. Sauté zucchini and garlic. Toss with lemon, olive oil, and parmesan."
+R010,Turkey cabbage skillet,1,30,skillet,"Brown turkey. Add cabbage, onion, garlic, ginger, and soy. Cook until cabbage is tender."
+R011,Yogurt lemon chicken,1,35,chicken,"Marinate chicken in yogurt, lemon, garlic, salt, and pepper. Roast. Serve over mixed greens."
+R012,Tomato garlic pasta,1,20,pasta,"Sizzle garlic in olive oil. Add canned tomatoes and salt. Toss with pasta and parmesan."

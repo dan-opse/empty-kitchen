@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+:root {
+  --canvas: #e4ebf0;
+  --canvas-deep: #d5e0e7;
+  --ink: #161c1e;
+  --muted: #7d888f;
+  --label: #9aa4aa;
+  --teal: #005a54;
+  --teal-hover: #004843;
+  --teal-soft: #dceae8;
+  --coral: #ff5c5c;
+  --coral-hover: #e84b4b;
+  --card: #ffffff;
+  --line: #cfd8de;
+  --shadow: 0 8px 28px rgba(22, 40, 48, 0.08);
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-canvas-deep: var(--canvas-deep);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-label: var(--label);
+  --color-teal: var(--teal);
+  --color-teal-hover: var(--teal-hover);
+  --color-teal-soft: var(--teal-soft);
+  --color-coral: var(--coral);
+  --color-coral-hover: var(--coral-hover);
+  --color-card: var(--card);
+  --color-line: var(--line);
+  --font-display: var(--font-sora);
+  --font-sans: var(--font-manrope);
+}
+
+html,
+body {
+  background: var(--canvas);
+  color: var(--ink);
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 10% -10%, rgba(0, 90, 84, 0.07), transparent 50%),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(255, 92, 92, 0.05), transparent 45%);
+}
+
+body::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  opacity: 0.35;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.45'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+  z-index: 0;
+}
+
+#app-root {
+  position: relative;
+  z-index: 1;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  min-height: 44px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

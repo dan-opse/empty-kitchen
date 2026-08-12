@@ -1,0 +1,34 @@
+ingredient_name,category,perishability,default_unit,aliases,is_staple
+chicken breast,protein,high,g,"chicken,chicken breasts,boneless chicken,gv chicken",false
+salmon,protein,high,g,"salmon fillet,atlantic salmon,fish",false
+ground turkey,protein,high,g,"turkey,turkey mince,ground turkey meat",false
+eggs,protein,medium,unit,"egg,large eggs,dozen eggs",false
+canned tuna,protein,low,g,"tuna,tuna can,chunk tuna",false
+tofu,protein,medium,g,"firm tofu,extra firm tofu",false
+chickpeas,protein,low,g,"garbanzo,canned chickpeas,chickpea",false
+spinach,produce,high,g,"baby spinach,spinach leaves",false
+broccoli,produce,high,g,"broccoli florets,broccoli crown",false
+bell pepper,produce,medium,unit,"pepper,red pepper,capsicum",false
+zucchini,produce,high,unit,"courgette,zucchini squash",false
+tomato,produce,medium,unit,"tomatoes,roma tomato",false
+lemon,produce,medium,unit,"lemons,lemon juice",false
+mixed greens,produce,high,g,"salad mix,spring mix,lettuce",false
+cabbage,produce,medium,g,"green cabbage,napa cabbage",false
+carrot,produce,medium,g,"carrots",false
+ginger,produce,medium,g,"fresh ginger,ginger root",false
+lime,produce,medium,unit,"limes,lime juice",false
+milk,dairy,high,ml,"whole milk,2% milk,gv whl mlk,whl mlk gal",false
+greek yogurt,dairy,high,g,"yogurt,plain yogurt",false
+parmesan,dairy,medium,g,"parmesan cheese,parm",false
+rice,pantry,low,g,"white rice,jasmine rice,rice dry",false
+pasta,pantry,low,g,"spaghetti,penne,noodles",false
+canned tomatoes,pantry,low,g,"crushed tomatoes,diced tomatoes,tomato can",false
+olive oil,pantry,low,ml,"evoo,extra virgin olive oil,oil",true
+soy sauce,pantry,low,ml,"shoyu,tamari",true
+salt,spice,low,g,"kosher salt,sea salt,table salt",true
+black pepper,spice,low,g,"pepper,ground pepper",true
+garlic,produce,medium,unit,"garlic clove,garlic cloves,clove",true
+onion,produce,medium,unit,"yellow onion,onions",true
+butter,dairy,medium,g,"unsalted butter,salted butter",true
+sesame oil,pantry,low,ml,"toasted sesame oil",true
+flour,pantry,low,g,"all purpose flour,ap flour",true
