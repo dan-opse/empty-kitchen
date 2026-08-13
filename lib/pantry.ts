@@ -47,9 +47,39 @@ export async function upsertLeftover(input: {
 }
 
 export async function deletePantryItem(pantryItemId: string): Promise<void> {
+  await removePantryItems([pantryItemId]);
+}
+
+export async function removePantryItems(ids: string[]): Promise<void> {
+  const unique = [...new Set(ids.filter(Boolean))];
+  if (unique.length === 0) return;
+  const sb = getSupabase();
+  const { data, error } = await sb
+    .from("pantry_items")
+    .select("pantry_item_id, kind")
+    .in("pantry_item_id", unique);
+  if (error) throw error;
+
+  const leftoverIds = (data ?? []).filter((row) => row.kind === "leftover").map((row) => row.pantry_item_id);
+  const stapleIds = (data ?? []).filter((row) => row.kind === "staple").map((row) => row.pantry_item_id);
+
+  if (leftoverIds.length) {
+    const { error: delErr } = await sb.from("pantry_items").delete().in("pantry_item_id", leftoverIds);
+    if (delErr) throw delErr;
+  }
+  if (stapleIds.length) {
+    const { error: hideErr } = await sb
+      .from("pantry_items")
+      .update({ hidden: true, status: "ran_out", updated_at: new Date().toISOString() })
+      .in("pantry_item_id", stapleIds);
+    if (hideErr) throw hideErr;
+  }
+}
+
+export async function setPantryNotes(pantryItemId: string, notes: string): Promise<void> {
   const { error } = await getSupabase()
     .from("pantry_items")
-    .delete()
+    .update({ notes, updated_at: new Date().toISOString() })
     .eq("pantry_item_id", pantryItemId);
   if (error) throw error;
 }
@@ -57,7 +87,7 @@ export async function deletePantryItem(pantryItemId: string): Promise<void> {
 export async function restockStaple(ingredientName: string): Promise<void> {
   const { error } = await getSupabase()
     .from("pantry_items")
-    .update({ status: "in_stock", updated_at: new Date().toISOString() })
+    .update({ status: "in_stock", hidden: false, updated_at: new Date().toISOString() })
     .eq("kind", "staple")
     .eq("ingredient_name", ingredientName);
   if (error) throw error;

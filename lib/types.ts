@@ -46,6 +46,8 @@ export type PantryItem = {
   unit: string | null;
   status: PantryStatus;
   kind: PantryKind;
+  notes: string;
+  hidden: boolean;
   updated_at: string;
 };
 
@@ -155,6 +157,21 @@ export type PlanCandidate = {
   days: number;
   slots: PlanSlot[];
   grocery_list: GroceryListRow[];
+};
+
+export type PlanHistoryPlan = {
+  plan_id: string;
+  plan_rank: number;
+  summary_text: string;
+  grocery_utilization_pct: number;
+  selected: boolean;
+  days: number;
+};
+
+export type PlanHistoryGeneration = {
+  generation_id: string;
+  start_date: string;
+  plans: PlanHistoryPlan[];
 };
 
 export type MealDetail = {

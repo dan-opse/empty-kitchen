@@ -39,19 +39,25 @@ export function indexByName(ingredients: Ingredient[]): Map<string, Ingredient> 
   return new Map(ingredients.map((i) => [i.ingredient_name, i]));
 }
 
-export async function listPantry(): Promise<PantryItem[]> {
+export async function listPantry(options?: { includeHidden?: boolean }): Promise<PantryItem[]> {
   const { data, error } = await getSupabase()
     .from("pantry_items")
     .select("*")
     .order("kind")
     .order("ingredient_name");
   if (error) throw error;
-  return (data ?? []) as PantryItem[];
+  const items = (data ?? []).map((row) => ({
+    ...(row as PantryItem),
+    notes: typeof row.notes === "string" ? row.notes : "",
+    hidden: Boolean(row.hidden),
+  }));
+  if (options?.includeHidden) return items;
+  return items.filter((item) => !item.hidden);
 }
 
 export async function ensureStapleRows(): Promise<void> {
   const ingredients = await listIngredients();
-  const pantry = await listPantry();
+  const pantry = await listPantry({ includeHidden: true });
   const existing = new Set(
     pantry.filter((p) => p.kind === "staple").map((p) => p.ingredient_name),
   );

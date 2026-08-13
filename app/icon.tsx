@@ -21,7 +21,7 @@ export default async function Icon({ id }: { id: Promise<string> }) {
         style={{
           width: "100%",
           height: "100%",
-          background: "#005A54",
+          background: "#9A3412",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -32,7 +32,7 @@ export default async function Icon({ id }: { id: Promise<string> }) {
             width: size - pad * 2,
             height: size - pad * 2,
             borderRadius: r,
-            border: `${Math.max(8, size / 24)}px solid #FF5C5C`,
+            border: `${Math.max(8, size / 24)}px solid #059669`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",

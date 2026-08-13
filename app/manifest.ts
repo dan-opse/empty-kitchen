@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Turn a grocery trip into a week of lunch and dinner.",
     start_url: "/",
     display: "standalone",
-    background_color: "#e4ebf0",
-    theme_color: "#005A54",
+    background_color: "#FFFBEB",
+    theme_color: "#9A3412",
     icons: [
       {
         src: "/icon/192",

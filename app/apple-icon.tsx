@@ -10,7 +10,7 @@ export default function AppleIcon() {
         style={{
           width: "100%",
           height: "100%",
-          background: "#005A54",
+          background: "#9A3412",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",

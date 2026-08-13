@@ -1,4 +1,5 @@
 import { purgeExpiredReceiptFiles } from "@/lib/receipts";
+import { purgeOldPlanGenerations } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
 
@@ -13,8 +14,9 @@ export async function GET(request: Request) {
   if (!authorized(request)) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const result = await purgeExpiredReceiptFiles();
-  return Response.json(result);
+  const receipts = await purgeExpiredReceiptFiles();
+  const plans = await purgeOldPlanGenerations();
+  return Response.json({ receipts, plans });
 }
 
 export async function POST(request: Request) {

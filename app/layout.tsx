@@ -9,6 +9,7 @@ const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
   subsets: ["latin"],
   display: "swap",
+  adjustFontFallback: true,
 });
 
 export const metadata: Metadata = {
@@ -25,7 +26,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#005A54",
+  themeColor: "#9A3412",
   viewportFit: "cover",
   width: "device-width",
   initialScale: 1,
@@ -33,8 +34,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} h-full antialiased`}>
-      <body className="min-h-full font-sans">
+    <html lang="en" className={`${spaceGrotesk.variable} ${spaceGrotesk.className} h-full antialiased`}>
+      <body className={`${spaceGrotesk.className} min-h-full font-sans`}>
         <div id="app-root" className="min-h-dvh">
           <OfflineBanner />
           <AppShell>{children}</AppShell>

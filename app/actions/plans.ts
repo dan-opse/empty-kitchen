@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import {
+  deleteActivePlan,
+  deleteAllSavedPlans,
   deselectActivePlan,
   getMealDetail,
   moveSlot,
@@ -16,6 +18,7 @@ export async function choosePlan(planId: string) {
   try {
     await selectPlan(planId);
     revalidatePath("/");
+    revalidatePath("/plans");
     return { ok: true as const };
   } catch (error) {
     return { ok: false as const, error: error instanceof Error ? error.message : "Could not select plan" };
@@ -82,6 +85,7 @@ export async function generatePlansOnDemand(input: { days: number; mode: Generat
       };
     }
     revalidatePath("/");
+    revalidatePath("/plans");
     return { ok: true as const, generationId };
   } catch (error) {
     return { ok: false as const, error: error instanceof Error ? error.message : "Could not generate plans" };
@@ -92,8 +96,31 @@ export async function clearWeek() {
   try {
     await deselectActivePlan();
     revalidatePath("/");
+    revalidatePath("/plans");
     return { ok: true as const };
   } catch (error) {
     return { ok: false as const, error: error instanceof Error ? error.message : "Could not clear the week" };
+  }
+}
+
+export async function removeCurrentPlan() {
+  try {
+    const deleted = await deleteActivePlan();
+    revalidatePath("/");
+    revalidatePath("/plans");
+    return { ok: true as const, deleted };
+  } catch (error) {
+    return { ok: false as const, error: error instanceof Error ? error.message : "Could not delete the plan" };
+  }
+}
+
+export async function removeAllSavedPlans() {
+  try {
+    await deleteAllSavedPlans();
+    revalidatePath("/");
+    revalidatePath("/plans");
+    return { ok: true as const };
+  } catch (error) {
+    return { ok: false as const, error: error instanceof Error ? error.message : "Could not delete saved plans" };
   }
 }

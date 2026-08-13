@@ -6,17 +6,20 @@ import { useRouter } from "next/navigation";
 import { DayStrip } from "@/components/day-strip";
 import { MealDetailPanel } from "@/components/meal-detail";
 import { MealRow } from "@/components/meal-row";
+import { Sheet } from "@/components/sheet";
 import { choosePlan, clearWeek, fetchMealDetail } from "@/app/actions/plans";
 import { Spinner } from "@/components/spinner";
 import { ACTIVE_PLAN_CACHE_KEY, type ActiveWeek, type MealDetail, type MealSlot, type PlanSlot } from "@/lib/types";
 import { addDaysISO, clamp, daysFromStart, spelledDate, weekdayShort, dateNumber } from "@/lib/dates";
+import { useLocalToday } from "@/lib/use-local-today";
 
 const DAY_RANGE_OPTIONS = [1, 2, 3, 4, 5, 7] as const;
 
 export function WeekView({ week }: { week: ActiveWeek }) {
   const router = useRouter();
-  const initialDay = clamp(daysFromStart(week.start_date) + 1, 1, week.days);
-  const [day, setDay] = useState(initialDay);
+  const today = useLocalToday();
+  const todayPlanDay = clamp(daysFromStart(week.start_date, today) + 1, 1, week.days);
+  const [day, setDay] = useState(todayPlanDay);
   const [dayRange, setDayRange] = useState<number>(Math.min(3, week.days));
   const [plusOpen, setPlusOpen] = useState(false);
   const [switchOpen, setSwitchOpen] = useState(false);
@@ -33,6 +36,20 @@ export function WeekView({ week }: { week: ActiveWeek }) {
     }
     void fetch("/api/plan/active").catch(() => undefined);
   }, [week]);
+
+  useEffect(() => {
+    setDay(clamp(daysFromStart(week.start_date) + 1, 1, week.days));
+    setDayRange(Math.min(3, week.days));
+  }, [week.plan_id, week.start_date, week.days]);
+
+  useEffect(() => {
+    setDay((current) => (current < todayPlanDay ? todayPlanDay : current));
+  }, [todayPlanDay]);
+
+  useEffect(() => {
+    const remaining = week.days - day + 1;
+    if (dayRange > remaining) setDayRange(remaining);
+  }, [day, dayRange, week.days]);
 
   const iso = addDaysISO(week.start_date, day - 1);
   const lunch = week.slots.find((s) => s.day_number === day && s.meal_slot === "lunch");
@@ -61,6 +78,9 @@ export function WeekView({ week }: { week: ActiveWeek }) {
       setDetail({ day: slot.day_number, meal: slot.meal_slot, data: result.detail });
     }
   }
+
+  const firstRow = visibleDays.slice(0, 3);
+  const secondRow = visibleDays.slice(3);
 
   const detailPanel = detail ? (
     <MealDetailPanel
@@ -121,7 +141,13 @@ export function WeekView({ week }: { week: ActiveWeek }) {
 
       {/* Mobile: day strip + single day */}
       <div className="md:hidden">
-        <DayStrip startDate={week.start_date} selectedDay={day} onSelect={selectDay} maxDay={week.days} />
+        <DayStrip
+          startDate={today}
+          planStartDate={week.start_date}
+          selectedDay={day}
+          onSelect={selectDay}
+          maxDay={week.days}
+        />
         <p className="mt-5 font-display text-xl font-semibold">{spelledDate(iso)}</p>
         <div key={day} className="mt-5">
           <DayMeals lunch={lunch} dinner={dinner} onEdit={openDetail} />
@@ -132,7 +158,14 @@ export function WeekView({ week }: { week: ActiveWeek }) {
       <div className="hidden md:block">
         <div className="mb-4">
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-label">Starts on</p>
-          <DayStrip startDate={week.start_date} selectedDay={day} onSelect={selectDay} compact maxDay={week.days} />
+          <DayStrip
+            startDate={today}
+            planStartDate={week.start_date}
+            selectedDay={day}
+            onSelect={selectDay}
+            compact
+            maxDay={week.days}
+          />
         </div>
 
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -173,44 +206,27 @@ export function WeekView({ week }: { week: ActiveWeek }) {
           </p>
         </div>
 
-        <div
-          className="grid gap-3"
-          style={{
-            gridTemplateColumns: `repeat(${visibleDays.length}, minmax(0, 1fr))`,
-          }}
-        >
-          {visibleDays.map((d, index) => {
-            const date = addDaysISO(week.start_date, d - 1);
-            const isAnchor = d === day;
-            return (
-              <section
-                key={d}
-                className={`fade-up flex min-w-0 flex-col rounded-[22px] border p-3.5 transition-[border-color,background-color,box-shadow] duration-200 ${
-                  isAnchor
-                    ? "border-teal/25 bg-white shadow-[var(--shadow)]"
-                    : "border-transparent bg-white/45 hover:border-line/80 hover:bg-white/70"
-                }`}
-                style={{ animationDelay: `${index * 40}ms` }}
-              >
-                <div className="mb-3 px-1">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-label">
-                    {weekdayShort(date)}
-                  </p>
-                  <p className="font-display text-2xl font-semibold tabular-nums leading-none tracking-tight">
-                    {dateNumber(date)}
-                  </p>
-                </div>
-                <DayMeals
-                  compact
-                  lunch={week.slots.find((s) => s.day_number === d && s.meal_slot === "lunch")}
-                  dinner={week.slots.find((s) => s.day_number === d && s.meal_slot === "dinner")}
-                  onEdit={(slot) => {
-                    void openDetail(slot);
-                  }}
-                />
-              </section>
-            );
-          })}
+        <div className="space-y-4">
+          <DayColumnRow
+            days={firstRow}
+            week={week}
+            anchorDay={day}
+            offset={0}
+            onEdit={(slot) => {
+              void openDetail(slot);
+            }}
+          />
+          {secondRow.length > 0 ? (
+            <DayColumnRow
+              days={secondRow}
+              week={week}
+              anchorDay={day}
+              offset={firstRow.length}
+              onEdit={(slot) => {
+                void openDetail(slot);
+              }}
+            />
+          ) : null}
         </div>
 
         {day + dayRange - 1 > week.days ? (
@@ -340,6 +356,60 @@ export function WeekView({ week }: { week: ActiveWeek }) {
   );
 }
 
+function DayColumnRow({
+  days,
+  week,
+  anchorDay,
+  offset,
+  onEdit,
+}: {
+  days: number[];
+  week: ActiveWeek;
+  anchorDay: number;
+  offset: number;
+  onEdit: (slot: PlanSlot) => void;
+}) {
+  return (
+    <div
+      className="grid gap-4"
+      style={{
+        gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))`,
+      }}
+    >
+      {days.map((d, index) => {
+        const date = addDaysISO(week.start_date, d - 1);
+        const isAnchor = d === anchorDay;
+        return (
+          <section
+            key={d}
+            className={`fade-up flex min-w-0 flex-col rounded-[22px] border p-3.5 transition-[border-color,background-color,box-shadow] duration-200 ${
+              isAnchor
+                ? "border-teal/25 bg-white shadow-[var(--shadow)]"
+                : "border-transparent bg-white/45 hover:border-line/80 hover:bg-white/70"
+            }`}
+            style={{ animationDelay: `${(offset + index) * 40}ms` }}
+          >
+            <div className="mb-3 px-1">
+              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-label">
+                {weekdayShort(date)}
+              </p>
+              <p className="font-display text-2xl font-semibold tabular-nums leading-none tracking-tight">
+                {dateNumber(date)}
+              </p>
+            </div>
+            <DayMeals
+              compact
+              lunch={week.slots.find((s) => s.day_number === d && s.meal_slot === "lunch")}
+              dinner={week.slots.find((s) => s.day_number === d && s.meal_slot === "dinner")}
+              onEdit={onEdit}
+            />
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
 function DayMeals({
   lunch,
   dinner,
@@ -361,22 +431,6 @@ function DayMeals({
         <h2 className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-label">Dinner</h2>
         {dinner ? <MealRow slot={dinner} onEdit={() => onEdit(dinner)} compact={compact} /> : null}
       </section>
-    </div>
-  );
-}
-
-function Sheet({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-40">
-      <button
-        type="button"
-        className="sheet-backdrop absolute inset-0 bg-ink/30"
-        aria-label="Close"
-        onClick={onClose}
-      />
-      <div className="sheet-panel absolute inset-x-0 bottom-0 rounded-t-[28px] bg-card p-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] md:inset-auto md:bottom-8 md:right-8 md:w-96 md:rounded-[28px]">
-        {children}
-      </div>
     </div>
   );
 }
@@ -435,12 +489,12 @@ export function EmptyWeek({
 }
 
 function EmptyChrome({ children }: { children: React.ReactNode }) {
-  const start = new Date().toISOString().slice(0, 10);
+  const today = useLocalToday();
   return (
     <div>
       <h1 className="font-display text-[2.15rem] font-semibold leading-none tracking-tight">Meal Plan</h1>
       <div className="mt-4">
-        <DayStrip startDate={start} selectedDay={1} onSelect={() => undefined} disabled />
+        <DayStrip startDate={today} selectedDay={1} onSelect={() => undefined} disabled />
       </div>
       <div className="mt-8">
         <h2 className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-label">Lunch</h2>

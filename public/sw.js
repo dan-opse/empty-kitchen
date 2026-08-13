@@ -1,5 +1,5 @@
 const SHELL = ["/", "/groceries", "/kitchen", "/manifest.webmanifest"];
-const CACHE = "meal-prep-v2";
+const CACHE = "meal-prep-v3";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

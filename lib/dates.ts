@@ -9,7 +9,7 @@ export function todayISO(date = new Date()): string {
   return `${y}-${m}-${d}`;
 }
 
-function parseISODate(iso: string): Date {
+export function parseISODate(iso: string): Date {
   const [y, m, d] = iso.split("-").map(Number);
   return new Date(y, (m ?? 1) - 1, d ?? 1);
 }
@@ -20,11 +20,21 @@ export function addDaysISO(iso: string, days: number): string {
   return todayISO(date);
 }
 
-export function daysFromStart(startIso: string, date = new Date()): number {
+export function daysFromStart(startIso: string, date: Date | string = new Date()): number {
   const start = parseISODate(startIso);
+  const end = typeof date === "string" ? parseISODate(date) : date;
   const a = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
-  const b = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+  const b = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
   return Math.round((b - a) / 86_400_000);
+}
+
+export function planDayNumber(planStartIso: string, dateIso: string): number {
+  return daysFromStart(planStartIso, dateIso) + 1;
+}
+
+export function msUntilLocalMidnight(now = new Date()): number {
+  const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  return Math.max(50, next.getTime() - now.getTime());
 }
 
 export function weekdayShort(iso: string): string {

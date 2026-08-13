@@ -1,5 +1,5 @@
 import { getSupabase } from "@/lib/supabase";
-import { newId, todayISO } from "@/lib/dates";
+import { addDaysISO, newId, todayISO } from "@/lib/dates";
 import { generateCandidatePlans } from "@/lib/generate-plans";
 import { polishSummary } from "@/lib/openai";
 import { buildPool, upsertLeftover } from "@/lib/pantry";
@@ -16,6 +16,7 @@ import type {
   MealDetail,
   MealSlot,
   PlanCandidate,
+  PlanHistoryGeneration,
   PlanSlot,
   PlanUsageRow,
   PurchasedItem,
@@ -308,6 +309,83 @@ export async function deselectActivePlan(): Promise<void> {
     .update({ selected: false })
     .eq("selected", true);
   if (error) throw error;
+}
+
+export async function deleteActivePlan(): Promise<boolean> {
+  const sb = getSupabase();
+  const { data: selected, error } = await sb
+    .from("weekly_plans")
+    .select("plan_id")
+    .eq("selected", true)
+    .maybeSingle();
+  if (error) throw error;
+  if (!selected) return false;
+  const { error: delErr } = await sb.from("weekly_plans").delete().eq("plan_id", selected.plan_id);
+  if (delErr) throw delErr;
+  return true;
+}
+
+export async function deleteAllSavedPlans(): Promise<void> {
+  const { error } = await getSupabase()
+    .from("weekly_plan_generations")
+    .delete()
+    .gte("start_date", "0001-01-01");
+  if (error) throw error;
+}
+
+export async function purgeOldPlanGenerations(): Promise<{ deleted: number }> {
+  const cutoff = addDaysISO(todayISO(), -14);
+  const { data, error } = await getSupabase()
+    .from("weekly_plan_generations")
+    .delete()
+    .lt("start_date", cutoff)
+    .select("generation_id");
+  if (error) throw error;
+  return { deleted: data?.length ?? 0 };
+}
+
+export async function listRecentPlanGenerations(): Promise<PlanHistoryGeneration[]> {
+  const sb = getSupabase();
+  const cutoff = addDaysISO(todayISO(), -14);
+  const { data: gens, error } = await sb
+    .from("weekly_plan_generations")
+    .select("generation_id, start_date")
+    .gte("start_date", cutoff)
+    .order("start_date", { ascending: false });
+  if (error) throw error;
+  if (!gens?.length) return [];
+
+  const ids = gens.map((g) => g.generation_id);
+  const { data: plans, error: planErr } = await sb
+    .from("weekly_plans")
+    .select("plan_id, generation_id, plan_rank, summary_text, grocery_utilization_pct, selected, slots_snapshot")
+    .in("generation_id", ids)
+    .order("plan_rank");
+  if (planErr) throw planErr;
+
+  const byGen = new Map<string, PlanHistoryGeneration>();
+  for (const gen of gens) {
+    byGen.set(gen.generation_id, {
+      generation_id: gen.generation_id,
+      start_date: gen.start_date,
+      plans: [],
+    });
+  }
+  for (const plan of plans ?? []) {
+    const group = byGen.get(plan.generation_id);
+    if (!group) continue;
+    const snapshot = plan.slots_snapshot as PlanSlot[] | null;
+    group.plans.push({
+      plan_id: plan.plan_id,
+      plan_rank: plan.plan_rank,
+      summary_text: plan.summary_text,
+      grocery_utilization_pct: Number(plan.grocery_utilization_pct),
+      selected: plan.selected,
+      days: snapshot?.length ? Math.max(1, Math.round(snapshot.length / 2)) : 7,
+    });
+  }
+
+  return [...byGen.values()].filter((g) => g.plans.length > 0);
 }
 
 export async function moveSlot(
