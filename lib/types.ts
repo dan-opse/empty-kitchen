@@ -110,8 +110,10 @@ export type GeneratedPlan = {
   overlap_score: number;
   grocery_utilization_pct: number;
   summary_text: string;
+  days: number;
   slots: PlanSlot[];
   usage: PlanUsageRow[];
+  grocery_list: GroceryListRow[];
 };
 
 export type PlanUsageRow = {
@@ -121,6 +123,16 @@ export type PlanUsageRow = {
   unit: string;
 };
 
+export type GroceryListRow = {
+  ingredient_name: string;
+  quantity: number;
+  unit: string;
+};
+
+export type GenerateMode = "use-kitchen" | "grocery-list";
+
+export type QtyMap = Map<string, { qty: number; unit: string }>;
+
 export type ActiveWeek = {
   plan_id: string;
   generation_id: string;
@@ -128,8 +140,10 @@ export type ActiveWeek = {
   summary_text: string;
   grocery_utilization_pct: number;
   plan_rank: number;
+  days: number;
   slots: PlanSlot[];
   candidates: PlanCandidate[];
+  grocery_list: GroceryListRow[];
 };
 
 export type PlanCandidate = {
@@ -138,7 +152,9 @@ export type PlanCandidate = {
   summary_text: string;
   grocery_utilization_pct: number;
   selected: boolean;
-  day1: { lunch: string | null; dinner: string | null };
+  days: number;
+  slots: PlanSlot[];
+  grocery_list: GroceryListRow[];
 };
 
 export type MealDetail = {

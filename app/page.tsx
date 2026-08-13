@@ -25,7 +25,8 @@ export default async function HomePage() {
     pendingId = pending?.generation_id ?? null;
     count = recipes;
     loaded = true;
-  } catch {
+  } catch (error) {
+    console.error("[home] load failed:", error);
     loaded = false;
   }
 

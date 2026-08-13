@@ -1,10 +1,12 @@
 import type {
   Ingredient,
   PoolItem,
+  QtyMap,
   Recipe,
   RecipeIngredient,
   UnitConversion,
 } from "@/lib/types";
+import { indexByName } from "@/lib/catalog";
 import { toDefaultUnit } from "@/lib/units";
 
 export type FeasibilityResult = {
@@ -16,14 +18,12 @@ export type FeasibilityResult = {
   missing_optionals: string[];
 };
 
-type QtyMap = Map<string, { qty: number; unit: string }>;
-
 export function poolToQtyMap(
   pool: PoolItem[],
   ingredients: Ingredient[],
   conversions: UnitConversion[],
 ): QtyMap {
-  const byName = new Map(ingredients.map((i) => [i.ingredient_name, i]));
+  const byName = indexByName(ingredients);
   const map: QtyMap = new Map();
   for (const item of pool) {
     const meta = byName.get(item.ingredient_name);
@@ -58,7 +58,7 @@ export function evaluateRecipe(
   conversions: UnitConversion[],
   qtyMap: QtyMap = poolToQtyMap(pool, ingredients, conversions),
 ): FeasibilityResult {
-  const byName = new Map(ingredients.map((i) => [i.ingredient_name, i]));
+  const byName = indexByName(ingredients);
   const swaps: { from: string; to: string }[] = [];
   const missing_required: string[] = [];
   const missing_optionals: string[] = [];
@@ -180,7 +180,7 @@ export function consumeCook(
   conversions: UnitConversion[],
   swaps: { from: string; to: string }[],
 ): boolean {
-  const byName = new Map(ingredients.map((i) => [i.ingredient_name, i]));
+  const byName = indexByName(ingredients);
   const needed = rows.filter((r) => r.recipe_id === recipeId && !r.substitute_for);
   const swapTo = new Map(swaps.map((s) => [s.from, s.to]));
 

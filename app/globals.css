@@ -37,8 +37,8 @@
   --color-coral-text: var(--coral-text);
   --color-card: var(--card);
   --color-line: var(--line);
-  --font-display: var(--font-sora);
-  --font-sans: var(--font-manrope);
+  --font-display: var(--font-space-grotesk);
+  --font-sans: var(--font-space-grotesk);
 }
 
 html,
@@ -49,7 +49,7 @@ body {
 }
 
 body {
-  font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
   background-image:
     radial-gradient(ellipse 80% 50% at 10% -10%, rgba(0, 90, 84, 0.07), transparent 50%),
     radial-gradient(ellipse 60% 40% at 100% 0%, rgba(255, 92, 92, 0.05), transparent 45%);
@@ -115,6 +115,26 @@ textarea:focus-visible {
   .pressable:active {
     transform: scale(0.97) translateY(0);
   }
+}
+
+/* Kitchen delete button — sized + styled in CSS so it doesn't depend on
+   Tailwind JIT picking up newly added utilities in dev. */
+.kitchen-delete {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+  background: var(--canvas-deep);
+  color: var(--muted);
+  transition:
+    background-color 180ms var(--ease-out),
+    color 180ms var(--ease-out);
+}
+.kitchen-delete:hover {
+  background: var(--coral);
+  color: #fff;
+}
+.kitchen-delete:disabled {
+  opacity: 0.6;
 }
 
 /* Text button primitives — hover lift + color shift */

@@ -1,5 +1,5 @@
 import { getSupabase } from "@/lib/supabase";
-import { addDaysISO, newId, todayISO } from "@/lib/dates";
+import { newId, todayISO } from "@/lib/dates";
 import { generateCandidatePlans } from "@/lib/generate-plans";
 import { polishSummary } from "@/lib/openai";
 import { buildPool, upsertLeftover } from "@/lib/pantry";
@@ -11,6 +11,8 @@ import {
 } from "@/lib/catalog";
 import type {
   ActiveWeek,
+  GenerateMode,
+  GroceryListRow,
   MealDetail,
   MealSlot,
   PlanCandidate,
@@ -31,8 +33,10 @@ type SlotRow = {
 };
 
 export async function persistGeneration(input: {
-  receiptId: string;
+  receiptId: string | null;
   purchased: PurchasedItem[];
+  days?: number;
+  mode?: GenerateMode;
 }): Promise<{ generationId: string; planCount: number }> {
   const [recipes, recipeIngredients, ingredients, conversions] = await Promise.all([
     listRecipes(),
@@ -49,6 +53,8 @@ export async function persistGeneration(input: {
     pool,
     purchased: input.purchased,
     conversions,
+    days: input.days,
+    mode: input.mode,
   });
 
   if (generated.length === 0) {
@@ -84,6 +90,7 @@ export async function persistGeneration(input: {
       selected: false,
       slots_snapshot: snapshot,
       usage: plan.usage,
+      grocery_list: plan.grocery_list,
     });
     if (planError) throw planError;
 
@@ -131,15 +138,16 @@ export async function getActiveWeek(): Promise<ActiveWeek | null> {
     summary_text: selected.summary_text,
     grocery_utilization_pct: Number(selected.grocery_utilization_pct),
     plan_rank: selected.plan_rank,
+    days: Math.max(1, Math.round(slots.length / 2)),
     slots,
     candidates,
+    grocery_list: (selected.grocery_list as GroceryListRow[]) ?? [],
   };
 }
 
 export async function getLatestUnselectedGeneration(): Promise<{
   generation_id: string;
   start_date: string;
-  candidates: PlanCandidate[];
 } | null> {
   const sb = getSupabase();
   const { data: selected } = await sb
@@ -157,9 +165,15 @@ export async function getLatestUnselectedGeneration(): Promise<{
   if (error) throw error;
   const gen = gens?.[0];
   if (!gen) return null;
-  const candidates = await loadCandidates(gen.generation_id);
-  if (candidates.length === 0) return null;
-  return { generation_id: gen.generation_id, start_date: gen.start_date, candidates };
+
+  // Cheap existence check instead of loading every candidate's slots + recipes.
+  const { count, error: countErr } = await sb
+    .from("weekly_plans")
+    .select("plan_id", { count: "exact", head: true })
+    .eq("generation_id", gen.generation_id);
+  if (countErr) throw countErr;
+  if (!count) return null;
+  return { generation_id: gen.generation_id, start_date: gen.start_date };
 }
 
 export async function loadCandidates(generationId: string): Promise<PlanCandidate[]> {
@@ -174,18 +188,15 @@ export async function loadCandidates(generationId: string): Promise<PlanCandidat
   const result: PlanCandidate[] = [];
   for (const plan of plans ?? []) {
     const slots = await loadSlots(plan.plan_id);
-    const lunch = slots.find((s) => s.day_number === 1 && s.meal_slot === "lunch");
-    const dinner = slots.find((s) => s.day_number === 1 && s.meal_slot === "dinner");
     result.push({
       plan_id: plan.plan_id,
       plan_rank: plan.plan_rank,
       summary_text: plan.summary_text,
       grocery_utilization_pct: Number(plan.grocery_utilization_pct),
       selected: plan.selected,
-      day1: {
-        lunch: lunch?.recipe_name ?? null,
-        dinner: dinner?.recipe_name ?? null,
-      },
+      days: Math.max(1, Math.round(slots.length / 2)),
+      slots,
+      grocery_list: (plan.grocery_list as GroceryListRow[]) ?? [],
     });
   }
   return result;
@@ -231,6 +242,12 @@ export async function loadSlots(planId: string): Promise<PlanSlot[]> {
 }
 
 export async function selectPlan(planId: string): Promise<void> {
+  // Snapshot semantics: each plan's slots_snapshot is frozen at generation time
+  // and never updated. Selecting a new plan restores the OUTGOING plan's
+  // snapshot (discarding any edits made to it this session), then marks the
+  // incoming plan selected. Edits made to a plan are dropped once you switch
+  // away from it — by design, so the kitchen always reflects the plan as
+  // originally generated when you return to it.
   const sb = getSupabase();
   const { data: plan, error } = await sb.from("weekly_plans").select("*").eq("plan_id", planId).single();
   if (error) throw error;
@@ -282,6 +299,14 @@ export async function removeSlot(planId: string, day: number, meal: MealSlot): P
     .eq("plan_id", planId)
     .eq("day_number", day)
     .eq("meal_slot", meal);
+  if (error) throw error;
+}
+
+export async function deselectActivePlan(): Promise<void> {
+  const { error } = await getSupabase()
+    .from("weekly_plans")
+    .update({ selected: false })
+    .eq("selected", true);
   if (error) throw error;
 }
 
@@ -390,8 +415,4 @@ export async function getMealDetail(
     notes: recipe.notes,
     ingredients,
   };
-}
-
-export function windowDates(startDate: string): string[] {
-  return Array.from({ length: 7 }, (_, i) => addDaysISO(startDate, i));
 }

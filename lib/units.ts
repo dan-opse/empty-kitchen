@@ -83,7 +83,7 @@ function lookupMultiplier(
   return null;
 }
 
-export function convertQuantity(
+function convertQuantity(
   qty: number,
   fromUnit: string,
   toUnit: string,
@@ -108,8 +108,4 @@ export function toDefaultUnit(
     return { qty, unit: normalizeUnit(fromUnit), ok: false };
   }
   return { qty: converted, unit: normalizeUnit(defaultUnit), ok: true };
-}
-
-export function roundQty(n: number): number {
-  return Math.round(n * 1000) / 1000;
 }

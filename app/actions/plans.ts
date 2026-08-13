@@ -1,8 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getMealDetail, moveSlot, pushBackDay, removeSlot, selectPlan } from "@/lib/plans";
-import type { MealSlot } from "@/lib/types";
+import {
+  deselectActivePlan,
+  getMealDetail,
+  moveSlot,
+  persistGeneration,
+  pushBackDay,
+  removeSlot,
+  selectPlan,
+} from "@/lib/plans";
+import type { GenerateMode, MealSlot } from "@/lib/types";
 
 export async function choosePlan(planId: string) {
   try {
@@ -56,5 +64,36 @@ export async function relocateMeal(
     return { ok: true as const };
   } catch (error) {
     return { ok: false as const, error: error instanceof Error ? error.message : "Could not move meal" };
+  }
+}
+
+export async function generatePlansOnDemand(input: { days: number; mode: GenerateMode }) {
+  try {
+    const { generationId, planCount } = await persistGeneration({
+      receiptId: null,
+      purchased: [],
+      days: input.days,
+      mode: input.mode,
+    });
+    if (planCount === 0) {
+      return {
+        ok: false as const,
+        error: "No plans could be generated. Try the grocery-list mode to plan meals with items to buy.",
+      };
+    }
+    revalidatePath("/");
+    return { ok: true as const, generationId };
+  } catch (error) {
+    return { ok: false as const, error: error instanceof Error ? error.message : "Could not generate plans" };
+  }
+}
+
+export async function clearWeek() {
+  try {
+    await deselectActivePlan();
+    revalidatePath("/");
+    return { ok: true as const };
+  } catch (error) {
+    return { ok: false as const, error: error instanceof Error ? error.message : "Could not clear the week" };
   }
 }

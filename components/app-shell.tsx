@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 const tabs = [
   { href: "/", label: "This week", icon: WeekIcon },
+  { href: "/plans", label: "Plans", icon: PlansIcon },
   { href: "/groceries", label: "Add groceries", icon: BagIcon },
   { href: "/kitchen", label: "Kitchen", icon: KitchenIcon },
 ];
@@ -43,7 +44,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           className="fixed inset-x-0 bottom-0 z-30 border-t border-white/40 bg-canvas/90 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur md:hidden"
           aria-label="Primary"
         >
-          <ul className="mx-auto grid max-w-md grid-cols-3">
+          <ul className="mx-auto grid max-w-md grid-cols-4">
             {tabs.map((tab) => {
               const active = isActive(pathname, tab.href);
               return (
@@ -77,6 +78,16 @@ function WeekIcon({ className }: { className?: string }) {
     <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
       <rect x="3" y="5" width="18" height="16" rx="3" stroke="currentColor" strokeWidth="1.8" />
       <path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function PlansIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <rect x="5" y="3" width="14" height="18" rx="3" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M8 3v3h8V3" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M8 11h8M8 15h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
     </svg>
   );
 }

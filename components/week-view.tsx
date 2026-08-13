@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { DayStrip } from "@/components/day-strip";
 import { MealDetailPanel } from "@/components/meal-detail";
 import { MealRow } from "@/components/meal-row";
-import { choosePlan, fetchMealDetail } from "@/app/actions/plans";
+import { choosePlan, clearWeek, fetchMealDetail } from "@/app/actions/plans";
+import { Spinner } from "@/components/spinner";
 import { ACTIVE_PLAN_CACHE_KEY, type ActiveWeek, type MealDetail, type MealSlot, type PlanSlot } from "@/lib/types";
 import { addDaysISO, clamp, daysFromStart, spelledDate, weekdayShort, dateNumber } from "@/lib/dates";
 
@@ -14,11 +15,13 @@ const DAY_RANGE_OPTIONS = [1, 2, 3, 4, 5, 7] as const;
 
 export function WeekView({ week }: { week: ActiveWeek }) {
   const router = useRouter();
-  const initialDay = clamp(daysFromStart(week.start_date) + 1, 1, 7);
+  const initialDay = clamp(daysFromStart(week.start_date) + 1, 1, week.days);
   const [day, setDay] = useState(initialDay);
-  const [dayRange, setDayRange] = useState<number>(3);
+  const [dayRange, setDayRange] = useState<number>(Math.min(3, week.days));
   const [plusOpen, setPlusOpen] = useState(false);
   const [switchOpen, setSwitchOpen] = useState(false);
+  const [groceryOpen, setGroceryOpen] = useState(false);
+  const [clearOpen, setClearOpen] = useState(false);
   const [detail, setDetail] = useState<{ day: number; meal: MealSlot; data: MealDetail } | null>(null);
   const [pending, start] = useTransition();
 
@@ -40,11 +43,17 @@ export function WeekView({ week }: { week: ActiveWeek }) {
     const days: number[] = [];
     for (let i = 0; i < dayRange; i++) {
       const d = start + i;
-      if (d > 7) break;
+      if (d > week.days) break;
       days.push(d);
     }
     return days;
-  }, [day, dayRange]);
+  }, [day, dayRange, week.days]);
+
+  function selectDay(next: number) {
+    setDay(next);
+    const remaining = week.days - next + 1;
+    if (dayRange > remaining) setDayRange(remaining);
+  }
 
   async function openDetail(slot: PlanSlot) {
     const result = await fetchMealDetail(week.plan_id, slot.day_number, slot.meal_slot);
@@ -61,6 +70,7 @@ export function WeekView({ week }: { week: ActiveWeek }) {
       detail={detail.data}
       startDate={week.start_date}
       weekSlots={week.slots}
+      days={week.days}
       onClose={() => {
         setDetail(null);
         router.refresh();
@@ -76,12 +86,28 @@ export function WeekView({ week }: { week: ActiveWeek }) {
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted">{week.summary_text}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {week.grocery_list.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => setGroceryOpen(true)}
+              className="btn-secondary pressable inline-flex items-center"
+            >
+              Grocery list
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={() => setSwitchOpen(true)}
             className="btn-secondary pressable hidden items-center md:inline-flex"
           >
             Switch plan
+          </button>
+          <button
+            type="button"
+            onClick={() => setClearOpen(true)}
+            className="btn-secondary pressable inline-flex items-center"
+          >
+            Clear week
           </button>
           <button
             type="button"
@@ -95,7 +121,7 @@ export function WeekView({ week }: { week: ActiveWeek }) {
 
       {/* Mobile: day strip + single day */}
       <div className="md:hidden">
-        <DayStrip startDate={week.start_date} selectedDay={day} onSelect={setDay} />
+        <DayStrip startDate={week.start_date} selectedDay={day} onSelect={selectDay} maxDay={week.days} />
         <p className="mt-5 font-display text-xl font-semibold">{spelledDate(iso)}</p>
         <div key={day} className="mt-5">
           <DayMeals lunch={lunch} dinner={dinner} onEdit={openDetail} />
@@ -106,7 +132,7 @@ export function WeekView({ week }: { week: ActiveWeek }) {
       <div className="hidden md:block">
         <div className="mb-4">
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-label">Starts on</p>
-          <DayStrip startDate={week.start_date} selectedDay={day} onSelect={setDay} compact />
+          <DayStrip startDate={week.start_date} selectedDay={day} onSelect={selectDay} compact maxDay={week.days} />
         </div>
 
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -119,13 +145,16 @@ export function WeekView({ week }: { week: ActiveWeek }) {
             >
               {DAY_RANGE_OPTIONS.map((n) => {
                 const selected = dayRange === n;
+                const beyondPlan = day + n - 1 > week.days;
                 return (
                   <button
                     key={n}
                     type="button"
+                    disabled={beyondPlan}
                     onClick={() => setDayRange(n)}
                     aria-pressed={selected}
-                    className={`pressable inline-flex min-h-10 items-center justify-center rounded-full px-3.5 py-2 text-sm font-semibold tabular-nums transition-[background-color,color,transform] duration-200 ${
+                    aria-disabled={beyondPlan}
+                    className={`pressable inline-flex min-h-10 items-center justify-center rounded-full px-3.5 py-2 text-sm font-semibold tabular-nums transition-[background-color,color,transform] duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${
                       selected
                         ? "bg-teal text-white shadow-sm"
                         : "text-muted hover:bg-canvas-deep hover:text-ink"
@@ -184,9 +213,9 @@ export function WeekView({ week }: { week: ActiveWeek }) {
           })}
         </div>
 
-        {day + dayRange - 1 > 7 ? (
+        {day + dayRange - 1 > week.days ? (
           <p className="mt-3 text-sm text-muted">
-            Only {visibleDays.length} day{visibleDays.length === 1 ? "" : "s"} left in this week from the selected start.
+            Only {visibleDays.length} day{visibleDays.length === 1 ? "" : "s"} left in this plan from the selected start.
           </p>
         ) : null}
       </div>
@@ -238,6 +267,58 @@ export function WeekView({ week }: { week: ActiveWeek }) {
               </li>
             ))}
           </ul>
+        </Sheet>
+      ) : null}
+
+      {groceryOpen ? (
+        <Sheet onClose={() => setGroceryOpen(false)}>
+          <h2 className="font-display text-xl font-semibold">Grocery list</h2>
+          <p className="mt-2 text-sm text-muted">
+            Items to buy for this plan. Staples are assumed on hand.
+          </p>
+          <ul className="mt-4 space-y-2">
+            {week.grocery_list.map((g) => (
+              <li key={g.ingredient_name} className="flex items-center justify-between gap-3 rounded-2xl bg-white/70 px-4 py-3 shadow-[var(--shadow)]">
+                <span className="font-medium">{g.ingredient_name}</span>
+                <span className="tabular-nums text-muted">
+                  {formatQty(g.quantity)} {g.unit}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Sheet>
+      ) : null}
+
+      {clearOpen ? (
+        <Sheet onClose={() => setClearOpen(false)}>
+          <h2 className="font-display text-xl font-semibold">Clear all meals?</h2>
+          <p className="mt-2 text-sm text-muted">
+            This removes the active plan for this week. Any other candidate plans from the same haul stay available to pick afterwards.
+          </p>
+          <div className="mt-4 flex gap-2">
+            <button
+              type="button"
+              onClick={() => setClearOpen(false)}
+              className="btn-secondary pressable inline-flex flex-1 items-center justify-center"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() =>
+                start(async () => {
+                  await clearWeek();
+                  setClearOpen(false);
+                  router.refresh();
+                })
+              }
+              className="btn-primary pressable inline-flex flex-1 items-center justify-center gap-2 disabled:opacity-60"
+            >
+              {pending ? <Spinner /> : null}
+              Clear week
+            </button>
+          </div>
         </Sheet>
       ) : null}
 
@@ -298,6 +379,10 @@ function Sheet({ children, onClose }: { children: React.ReactNode; onClose: () =
       </div>
     </div>
   );
+}
+
+function formatQty(qty: number): string {
+  return Number.isInteger(qty) ? String(qty) : String(Math.round(qty * 100) / 100);
 }
 
 export function EmptyWeek({

@@ -9,7 +9,7 @@ export function todayISO(date = new Date()): string {
   return `${y}-${m}-${d}`;
 }
 
-export function parseISODate(iso: string): Date {
+function parseISODate(iso: string): Date {
   const [y, m, d] = iso.split("-").map(Number);
   return new Date(y, (m ?? 1) - 1, d ?? 1);
 }

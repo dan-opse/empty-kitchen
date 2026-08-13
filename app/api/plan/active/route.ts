@@ -10,7 +10,8 @@ export async function GET() {
   try {
     const week = await getActiveWeek();
     return Response.json(week);
-  } catch {
+  } catch (error) {
+    console.error("[api/plan/active] getActiveWeek failed:", error);
     return Response.json(null, { status: 200 });
   }
 }

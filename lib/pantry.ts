@@ -11,18 +11,6 @@ export async function setPantryStatus(pantryItemId: string, status: PantryStatus
   if (error) throw error;
 }
 
-export async function updatePantryQty(
-  pantryItemId: string,
-  quantity: number | null,
-  unit: string | null,
-): Promise<void> {
-  const { error } = await getSupabase()
-    .from("pantry_items")
-    .update({ quantity, unit, updated_at: new Date().toISOString() })
-    .eq("pantry_item_id", pantryItemId);
-  if (error) throw error;
-}
-
 export async function upsertLeftover(input: {
   ingredient_name: string;
   quantity: number;
@@ -55,6 +43,14 @@ export async function upsertLeftover(input: {
     kind: "leftover",
     updated_at: new Date().toISOString(),
   });
+  if (error) throw error;
+}
+
+export async function deletePantryItem(pantryItemId: string): Promise<void> {
+  const { error } = await getSupabase()
+    .from("pantry_items")
+    .delete()
+    .eq("pantry_item_id", pantryItemId);
   if (error) throw error;
 }
 

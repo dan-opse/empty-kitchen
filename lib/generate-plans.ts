@@ -5,20 +5,40 @@ import {
   evaluateRecipe,
   poolToQtyMap,
 } from "@/lib/feasibility";
+import { indexByName } from "@/lib/catalog";
 import { toDefaultUnit } from "@/lib/units";
 import type {
   GeneratedPlan,
+  GenerateMode,
+  GroceryListRow,
   Ingredient,
   PlanSlot,
   PlanUsageRow,
   PoolItem,
   PurchasedItem,
+  QtyMap,
   Recipe,
   RecipeIngredient,
   UnitConversion,
 } from "@/lib/types";
 
 const PREP_DINNER_THRESHOLD = 30;
+const SENTINEL_QTY = 1e9;
+
+const CLUSTER_MIN = 10;
+const CLUSTER_MAX = 14;
+const CLUSTER_STOP_THRESHOLD = 0.05;
+const NOVELTY_AVOID = -0.45;
+const NOVELTY_FRESH = 0.15;
+const FITS_QTY_BONUS = 0.1;
+const FITS_QTY_PENALTY = -0.2;
+
+const GROCERY_QTY_WEIGHT = 0.65;
+const GROCERY_SKU_WEIGHT = 0.35;
+const PERISH_WEIGHT_GROCERY = 4;
+const OVERLAP_WEIGHT_GROCERY = 4;
+const PERISH_WEIGHT_KITCHEN = 8;
+const OVERLAP_WEIGHT_KITCHEN = 4;
 
 type Feasible = {
   recipe: Recipe;
@@ -27,6 +47,8 @@ type Feasible = {
   missing_optionals: string[];
 };
 
+type SortablePlan = GeneratedPlan & { _sort: number };
+
 export function generateCandidatePlans(input: {
   recipes: Recipe[];
   recipeIngredients: RecipeIngredient[];
@@ -34,14 +56,18 @@ export function generateCandidatePlans(input: {
   pool: PoolItem[];
   purchased: PurchasedItem[];
   conversions: UnitConversion[];
+  days?: number;
+  mode?: GenerateMode;
 }): GeneratedPlan[] {
   const { recipes, recipeIngredients, ingredients, pool, purchased, conversions } = input;
-  const qtyMap = poolToQtyMap(pool, ingredients, conversions);
+  const days = clampDays(input.days);
+  const mode: GenerateMode = input.mode ?? "use-kitchen";
+  const baseQtyMap = poolToQtyMap(pool, ingredients, conversions);
   const feasible: Feasible[] = [];
 
   for (const recipe of recipes) {
-    const result = evaluateRecipe(recipe, recipeIngredients, pool, ingredients, conversions, qtyMap);
-    if (result.feasible) {
+    const result = evaluateRecipe(recipe, recipeIngredients, pool, ingredients, conversions, baseQtyMap);
+    if (mode === "grocery-list" || result.feasible) {
       feasible.push({
         recipe,
         modified: result.modified,
@@ -52,6 +78,11 @@ export function generateCandidatePlans(input: {
   }
 
   if (feasible.length === 0) return [];
+
+  // In grocery-list mode, missing ingredients are buyable: seed the scheduling
+  // qty map with a large sentinel for every required non-staple ingredient so
+  // consumption never blocks. The real pool is still used to compute the grocery list.
+  const schedulingQtyMap = mode === "grocery-list" ? seedSentinels(baseQtyMap, feasible, recipeIngredients, ingredients) : baseQtyMap;
 
   const overlap = overlapMatrix(feasible, recipeIngredients, ingredients);
   const seeds = pickSeeds(feasible, purchased, recipeIngredients, ingredients);
@@ -67,7 +98,7 @@ export function generateCandidatePlans(input: {
       recipeIngredients,
       ingredients,
       conversions,
-      qtyMap,
+      schedulingQtyMap,
       usedRecipes,
     );
     const sig = cluster
@@ -82,7 +113,8 @@ export function generateCandidatePlans(input: {
   }
 
   while (clusters.length < 3) {
-    const extra = feasible.find((f) => !usedRecipes.has(f.recipe.recipe_id)) ?? feasible[clusters.length];
+    let extra = feasible.find((f) => !usedRecipes.has(f.recipe.recipe_id));
+    if (!extra) extra = feasible[clusters.length];
     if (!extra) break;
     const cluster = growCluster(
       extra,
@@ -91,7 +123,7 @@ export function generateCandidatePlans(input: {
       recipeIngredients,
       ingredients,
       conversions,
-      qtyMap,
+      schedulingQtyMap,
       usedRecipes,
     );
     const sig = cluster
@@ -107,22 +139,33 @@ export function generateCandidatePlans(input: {
     for (const item of cluster) usedRecipes.add(item.recipe.recipe_id);
   }
 
-  const plans = clusters.slice(0, 3).map((cluster, index) => {
-    const expanded = expandTo14(cluster, feasible, recipeIngredients, ingredients, conversions, qtyMap);
+  const plans: SortablePlan[] = clusters.slice(0, 3).map((cluster, index) => {
+    const expanded = expandToDays(cluster, feasible, recipeIngredients, ingredients, conversions, schedulingQtyMap, days);
     const usage = usageBreakdown(expanded.slots, purchased, recipeIngredients, ingredients, conversions, cluster);
     const overlapScore = clusterOverlap(cluster, overlap);
-    const perishScore = perishabilityScore(expanded.slots, recipeIngredients, ingredients);
+    const perishScore = perishabilityScore(expanded.slots, recipeIngredients, ingredients, days);
     const skuCoverage = skuCoveragePct(usage);
     const qtyUtil = quantityUtilPct(usage);
-    const grocery = Math.round((qtyUtil * 0.65 + skuCoverage * 0.35) * 10) / 10;
-    const combined = grocery + perishScore * 8 + overlapScore * 4;
+    const grocery = Math.round((qtyUtil * GROCERY_QTY_WEIGHT + skuCoverage * GROCERY_SKU_WEIGHT) * 10) / 10;
+    const groceryList =
+      mode === "grocery-list"
+        ? buildGroceryList(expanded.slots, recipeIngredients, ingredients, conversions, baseQtyMap)
+        : [];
+    // In grocery-list mode, fewer items to buy is better (and indirectly rewards
+    // using on-hand ingredients). In use-kitchen mode, keep the existing haul score.
+    const combined =
+      mode === "grocery-list"
+        ? -groceryList.length + perishScore * PERISH_WEIGHT_GROCERY + overlapScore * OVERLAP_WEIGHT_GROCERY
+        : grocery + perishScore * PERISH_WEIGHT_KITCHEN + overlapScore * OVERLAP_WEIGHT_KITCHEN;
     return {
       plan_rank: index + 1,
       overlap_score: Math.round(overlapScore * 1000) / 1000,
       grocery_utilization_pct: grocery,
       summary_text: buildSummary(expanded.slots, cluster, purchased, recipeIngredients),
+      days,
       slots: expanded.slots,
       usage,
+      grocery_list: groceryList,
       _sort: combined,
     };
   });
@@ -133,8 +176,10 @@ export function generateCandidatePlans(input: {
     overlap_score: plan.overlap_score,
     grocery_utilization_pct: plan.grocery_utilization_pct,
     summary_text: plan.summary_text,
+    days: plan.days,
     slots: plan.slots,
     usage: plan.usage,
+    grocery_list: plan.grocery_list,
   }));
 }
 
@@ -236,21 +281,23 @@ function growCluster(
 ): Feasible[] {
   const cluster = [seed];
   const remaining = feasible.filter((f) => f.recipe.recipe_id !== seed.recipe.recipe_id);
-  const targetMin = Math.min(5, feasible.length);
-  const targetMax = Math.min(8, feasible.length);
+  const targetMin = Math.min(CLUSTER_MIN, feasible.length);
+  const targetMax = Math.min(CLUSTER_MAX, feasible.length);
 
   while (cluster.length < targetMax) {
     let best: Feasible | null = null;
     let bestScore = -Infinity;
     for (const candidate of remaining) {
-      if (!clusterFitsQty([...cluster, candidate], rows, ingredients, conversions, qtyMap)) continue;
       const avg =
         cluster.reduce(
           (sum, c) => sum + (overlap.get(pairKey(c.recipe.recipe_id, candidate.recipe.recipe_id)) ?? 0),
           0,
         ) / cluster.length;
-      const novelty = avoidIds.has(candidate.recipe.recipe_id) ? -0.45 : 0.15;
-      const score = avg + novelty;
+      const novelty = avoidIds.has(candidate.recipe.recipe_id) ? NOVELTY_AVOID : NOVELTY_FRESH;
+      const fitsQty = clusterFitsQty([...cluster, candidate], rows, ingredients, conversions, qtyMap)
+        ? FITS_QTY_BONUS
+        : FITS_QTY_PENALTY;
+      const score = avg + novelty + fitsQty;
       if (score > bestScore) {
         bestScore = score;
         best = candidate;
@@ -259,7 +306,7 @@ function growCluster(
     if (!best) break;
     cluster.push(best);
     remaining.splice(remaining.indexOf(best), 1);
-    if (cluster.length >= targetMin && bestScore < 0.05) break;
+    if (cluster.length >= targetMin && bestScore < CLUSTER_STOP_THRESHOLD) break;
   }
   return cluster;
 }
@@ -280,64 +327,48 @@ function clusterFitsQty(
   return true;
 }
 
-function expandTo14(
+function expandToDays(
   cluster: Feasible[],
   allFeasible: Feasible[],
   rows: RecipeIngredient[],
   ingredients: Ingredient[],
   conversions: UnitConversion[],
   qtyMap: Map<string, { qty: number; unit: string }>,
+  days: number,
 ): { slots: PlanSlot[] } {
   const slots: PlanSlot[] = [];
-  for (let day = 1; day <= 7; day++) {
+  for (let day = 1; day <= days; day++) {
     slots.push(emptySlot(day, "lunch"));
     slots.push(emptySlot(day, "dinner"));
   }
 
   const working = cloneQtyMap(qtyMap);
-  const byId = new Map(allFeasible.map((f) => [f.recipe.recipe_id, f]));
-  const perishOrder = [...cluster].sort((a, b) => {
-    const pa = recipePerish(a.recipe.recipe_id, rows, ingredients);
-    const pb = recipePerish(b.recipe.recipe_id, rows, ingredients);
-    if (pb !== pa) return pb - pa;
-    return b.recipe.prep_time_minutes - a.recipe.prep_time_minutes;
-  });
+  const cookedIds = () =>
+    new Set(slots.filter((s) => s.recipe_id && !s.is_leftover).map((s) => s.recipe_id!));
 
-  for (const item of perishOrder) {
+  const perishOrder = (items: Feasible[]) =>
+    [...items].sort((a, b) => {
+      const pa = recipePerish(a.recipe.recipe_id, rows, ingredients);
+      const pb = recipePerish(b.recipe.recipe_id, rows, ingredients);
+      if (pb !== pa) return pb - pa;
+      return b.recipe.prep_time_minutes - a.recipe.prep_time_minutes;
+    });
+
+  const clusterIds = new Set(cluster.map((c) => c.recipe.recipe_id));
+  const distinctOrder = [
+    ...perishOrder(cluster),
+    ...perishOrder(allFeasible.filter((f) => !clusterIds.has(f.recipe.recipe_id))),
+  ];
+  for (const item of distinctOrder) {
+    if (cookedIds().has(item.recipe.recipe_id)) continue;
     const preferred: "lunch" | "dinner" =
       item.recipe.prep_time_minutes >= PREP_DINNER_THRESHOLD ? "dinner" : "lunch";
-    const placed = placeCook(slots, item, preferred, working, rows, ingredients, conversions);
-    if (!placed) continue;
-    const cookSlot = slots.find(
-      (s) => s.recipe_id === item.recipe.recipe_id && !s.is_leftover,
-    );
-    if (!cookSlot || cookSlot.day_number >= 7) continue;
-    const leftoverMeal = cookSlot.meal_slot;
-    const next = slots.find(
-      (s) => s.day_number === cookSlot.day_number + 1 && s.meal_slot === leftoverMeal && !s.recipe_id,
-    );
-    if (next) assignSlot(next, item, true);
+    placeCook(slots, item, preferred, working, rows, ingredients, conversions, days);
   }
 
   for (const slot of slots) {
     if (slot.recipe_id) continue;
-    const prev = slots.find(
-      (s) => s.day_number === slot.day_number - 1 && s.meal_slot === slot.meal_slot && s.recipe_id,
-    );
-    if (prev?.recipe_id && !prev.is_leftover) {
-      const item = byId.get(prev.recipe_id);
-      if (item) {
-        assignSlot(slot, item, true);
-        continue;
-      }
-    }
-    const nextCook =
-      cluster.find((item) =>
-        canCook(item.recipe.recipe_id, rows, working, ingredients, conversions, item.swaps),
-      ) ??
-      allFeasible.find((item) =>
-        canCook(item.recipe.recipe_id, rows, working, ingredients, conversions, item.swaps),
-      );
+    const nextCook = pickNextCook(slots, cluster, allFeasible, working, rows, ingredients, conversions);
     if (nextCook) {
       const ok = consumeCook(
         nextCook.recipe.recipe_id,
@@ -352,13 +383,60 @@ function expandTo14(
         continue;
       }
     }
-    if (prev?.recipe_id) {
-      const item = byId.get(prev.recipe_id);
-      if (item) assignSlot(slot, item, true);
+    const repeatCook = pickRepeatCook(slots, cluster, allFeasible);
+    if (repeatCook) {
+      assignSlot(slot, repeatCook, false);
     }
   }
 
   return { slots };
+}
+
+function pickRepeatCook(
+  slots: PlanSlot[],
+  cluster: Feasible[],
+  allFeasible: Feasible[],
+): Feasible | null {
+  const cooked = slots.filter((s) => s.recipe_id && !s.is_leftover);
+  if (cooked.length === 0) return null;
+  const byId = new Map(allFeasible.map((f) => [f.recipe.recipe_id, f]));
+  const usedInWeek = [...new Set(cooked.map((s) => s.recipe_id!))];
+  const pools = [
+    usedInWeek.map((id) => byId.get(id)).filter((f): f is Feasible => !!f),
+    cluster,
+    allFeasible,
+  ];
+  for (const pool of pools) {
+    if (pool.length) return pool[cooked.length % pool.length];
+  }
+  return null;
+}
+
+function pickNextCook(
+  slots: PlanSlot[],
+  cluster: Feasible[],
+  allFeasible: Feasible[],
+  working: Map<string, { qty: number; unit: string }>,
+  rows: RecipeIngredient[],
+  ingredients: Ingredient[],
+  conversions: UnitConversion[],
+): Feasible | null {
+  const cooked = new Set(
+    slots.filter((s) => s.recipe_id && !s.is_leftover).map((s) => s.recipe_id!),
+  );
+  const pools = [
+    allFeasible.filter((f) => !cooked.has(f.recipe.recipe_id)),
+    cluster,
+    allFeasible,
+  ];
+  for (const pool of pools) {
+    for (const item of pool) {
+      if (canCook(item.recipe.recipe_id, rows, working, ingredients, conversions, item.swaps)) {
+        return item;
+      }
+    }
+  }
+  return null;
 }
 
 function emptySlot(day: number, meal: "lunch" | "dinner"): PlanSlot {
@@ -395,9 +473,10 @@ function placeCook(
   rows: RecipeIngredient[],
   ingredients: Ingredient[],
   conversions: UnitConversion[],
+  days: number,
 ): boolean {
   const other = preferred === "dinner" ? "lunch" : "dinner";
-  for (let day = 1; day <= 7; day++) {
+  for (let day = 1; day <= days; day++) {
     for (const meal of [preferred, other] as const) {
       const slot = slots.find((s) => s.day_number === day && s.meal_slot === meal);
       if (!slot || slot.recipe_id) continue;
@@ -508,13 +587,15 @@ function perishabilityScore(
   slots: PlanSlot[],
   rows: RecipeIngredient[],
   ingredients: Ingredient[],
+  days: number,
 ): number {
   const cooks = slots.filter((s) => s.recipe_id && !s.is_leftover);
   if (cooks.length === 0) return 0;
+  const span = Math.max(1, days - 1);
   let sum = 0;
   for (const cook of cooks) {
     const perish = recipePerish(cook.recipe_id!, rows, ingredients);
-    const early = 1 - (cook.day_number - 1) / 6;
+    const early = 1 - (cook.day_number - 1) / span;
     sum += perish >= 3 ? early : perish >= 2 ? early * 0.5 : 0.3;
   }
   return sum / cooks.length;
@@ -557,4 +638,85 @@ function buildSummary(
   if (leftoverCount) parts.push(`${leftoverCount} leftover suggestions`);
   if (cluster.some((c) => c.modified)) parts.push("some recipes marked modified");
   return parts.join("; ") || `${cluster.length} cooks covering the week`;
+}
+
+function clampDays(days: number | undefined): number {
+  if (!days || Number.isNaN(days)) return 7;
+  return Math.min(7, Math.max(1, Math.floor(days)));
+}
+
+function seedSentinels(
+  qtyMap: QtyMap,
+  feasible: Feasible[],
+  rows: RecipeIngredient[],
+  ingredients: Ingredient[],
+): QtyMap {
+  const byName = indexByName(ingredients);
+  const seeded = cloneQtyMap(qtyMap);
+  for (const f of feasible) {
+    const needed = rows.filter((r) => r.recipe_id === f.recipe.recipe_id && !r.substitute_for);
+    for (const row of needed) {
+      const meta = byName.get(row.ingredient_name);
+      if (row.tier === "staple" || meta?.is_staple) continue;
+      seeded.set(row.ingredient_name, {
+        qty: SENTINEL_QTY,
+        unit: meta?.default_unit ?? row.unit,
+      });
+    }
+  }
+  return seeded;
+}
+
+function buildGroceryList(
+  slots: PlanSlot[],
+  rows: RecipeIngredient[],
+  ingredients: Ingredient[],
+  conversions: UnitConversion[],
+  poolQtyMap: QtyMap,
+): GroceryListRow[] {
+  const byName = indexByName(ingredients);
+  const available = cloneQtyMap(poolQtyMap);
+  const needed = new Map<string, { qty: number; unit: string }>();
+
+  const cooks = slots.filter((s) => s.recipe_id && !s.is_leftover);
+  for (const slot of cooks) {
+    const slotRows = rows.filter((r) => r.recipe_id === slot.recipe_id && !r.substitute_for);
+    const swapTo = new Map(slot.swaps.map((s) => [s.from, s.to]));
+    for (const row of slotRows) {
+      const meta = byName.get(row.ingredient_name);
+      if (row.tier === "staple" || meta?.is_staple) continue;
+      const name = swapTo.get(row.ingredient_name) ?? row.ingredient_name;
+      const useRow =
+        name === row.ingredient_name
+          ? row
+          : rows.find((r) => r.recipe_id === slot.recipe_id && r.ingredient_name === name) ?? row;
+      const useMeta = byName.get(name);
+      const converted = toDefaultUnit(
+        useRow.quantity,
+        useRow.unit,
+        useMeta?.default_unit ?? useRow.unit,
+        conversions,
+      );
+      if (!converted.ok) continue;
+      const have = available.get(name);
+      const onHand = have ? Math.min(have.qty, converted.qty) : 0;
+      if (have) have.qty = Math.max(0, have.qty - onHand);
+      const shortfall = converted.qty - onHand;
+      if (shortfall > 1e-9) {
+        const prev = needed.get(name);
+        needed.set(name, {
+          qty: (prev?.qty ?? 0) + shortfall,
+          unit: converted.unit,
+        });
+      }
+    }
+  }
+
+  return [...needed.entries()]
+    .map(([ingredient_name, { qty, unit }]) => ({
+      ingredient_name,
+      quantity: Math.round(qty * 10) / 10,
+      unit,
+    }))
+    .sort((a, b) => a.ingredient_name.localeCompare(b.ingredient_name));
 }

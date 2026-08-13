@@ -35,6 +35,10 @@ export async function listConversions(): Promise<UnitConversion[]> {
   return (data ?? []) as UnitConversion[];
 }
 
+export function indexByName(ingredients: Ingredient[]): Map<string, Ingredient> {
+  return new Map(ingredients.map((i) => [i.ingredient_name, i]));
+}
+
 export async function listPantry(): Promise<PantryItem[]> {
   const { data, error } = await getSupabase()
     .from("pantry_items")

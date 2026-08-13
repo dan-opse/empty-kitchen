@@ -113,7 +113,7 @@ export async function extractGroceryLines(input: {
     },
   });
 
-  const parsed = JSON.parse(response.output_text || "{}") as {
+  let parsed: {
     raw_ocr_text?: string;
     items?: {
       raw_line_text: string;
@@ -124,6 +124,12 @@ export async function extractGroceryLines(input: {
       needs_review: boolean;
     }[];
   };
+  try {
+    parsed = JSON.parse(response.output_text || "{}");
+  } catch (error) {
+    console.error("[openai] extractGroceryLines JSON.parse failed:", error);
+    parsed = {};
+  }
 
   const names = new Set(input.ingredients.map((i) => i.ingredient_name));
   const items: DraftLine[] = (parsed.items ?? [])

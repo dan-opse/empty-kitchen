@@ -1,20 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Manrope, Sora } from "next/font/google";
+import { Space_Grotesk } from "next/font/google";
 import { AppShell } from "@/components/app-shell";
 import { OfflineBanner } from "@/components/offline-banner";
 import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import "./globals.css";
 
-const sora = Sora({
-  variable: "--font-sora",
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
   subsets: ["latin"],
-  weight: ["600", "700"],
-});
-
-const manrope = Manrope({
-  variable: "--font-manrope",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -39,7 +33,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${sora.variable} ${manrope.variable} h-full antialiased`}>
+    <html lang="en" className={`${spaceGrotesk.variable} h-full antialiased`}>
       <body className="min-h-full font-sans">
         <div id="app-root" className="min-h-dvh">
           <OfflineBanner />

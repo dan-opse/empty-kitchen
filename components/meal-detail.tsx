@@ -12,6 +12,7 @@ export function MealDetailPanel({
   detail,
   startDate,
   weekSlots,
+  days,
   onClose,
 }: {
   planId: string;
@@ -20,6 +21,7 @@ export function MealDetailPanel({
   detail: MealDetail;
   startDate: string;
   weekSlots: PlanSlot[];
+  days: number;
   onClose: () => void;
 }) {
   const [pending, start] = useTransition();
@@ -51,13 +53,13 @@ export function MealDetailPanel({
             {detail.slot.modified ? " · modified" : ""}
           </p>
         </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="pressable inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold text-muted hover:bg-canvas-deep hover:text-ink"
-          >
-            Close
-          </button>
+        <button
+          type="button"
+          onClick={onClose}
+          className="pressable inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold text-muted hover:bg-canvas-deep hover:text-ink"
+        >
+          Close
+        </button>
       </div>
 
       {detail.ingredients.length > 0 ? (
@@ -117,7 +119,7 @@ export function MealDetailPanel({
 
       {moveOpen ? (
         <div className="fade-up mt-3 grid grid-cols-2 gap-2">
-          {Array.from({ length: 7 }, (_, i) => i + 1).flatMap((d) => {
+          {Array.from({ length: days }, (_, i) => i + 1).flatMap((d) => {
             const cellIso = addDaysISO(startDate, d - 1);
             return (["lunch", "dinner"] as const).map((m) => {
               const isCurrent = d === day && m === meal;
