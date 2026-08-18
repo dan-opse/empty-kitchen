@@ -45,10 +45,15 @@ export function ConfirmForm({
     setItems((rows) => rows.map((row, i) => (i === index ? { ...row, ...patch } : row)));
   }
 
+  const reviewCount = items.filter((item) => item.needs_review).length;
+
   return (
     <div className="mx-auto max-w-[640px]">
       <h1 className="fade-up font-display text-[2.15rem] font-semibold leading-none tracking-tight">Final check</h1>
-      <p className="mt-3 text-muted">Fix names, quantities, and units before matching. Nothing is planned until you generate.</p>
+      <p className="mt-3 text-muted">
+        Fix names, quantities, and units before matching. When you generate, receipt line text is saved as
+        aliases so the next scan matches faster.
+      </p>
 
       {kitchen.length > 0 ? (
         <section className="mt-8">
@@ -103,49 +108,78 @@ export function ConfirmForm({
       ) : null}
 
       <section className="mt-8">
-        <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-label">New lines</h2>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-label">New lines</h2>
+          {reviewCount > 0 ? (
+            <p className="text-xs font-semibold text-amber-800">
+              {reviewCount} line{reviewCount === 1 ? "" : "s"} need review
+            </p>
+          ) : null}
+        </div>
         <ul className="space-y-2">
           {items.map((item, i) => (
-            <li key={`${item.raw_line_text}-${i}`} className="rounded-[20px] bg-card p-3 shadow-[var(--shadow)]">
+            <li
+              key={`${item.raw_line_text}-${i}`}
+              className={`rounded-[20px] bg-card p-3 shadow-[var(--shadow)] ${
+                item.needs_review ? "ring-2 ring-amber-400/50" : ""
+              }`}
+            >
               <input
                 list="ingredient-names"
                 value={item.matched_ingredient_name}
-                onChange={(e) => updateItem(i, { matched_ingredient_name: e.target.value })}
+                onChange={(e) =>
+                  updateItem(i, { matched_ingredient_name: e.target.value, needs_review: false })
+                }
                 placeholder="Ingredient"
-                className="w-full rounded-2xl bg-canvas px-3 py-2 font-semibold"
+                className="w-full min-w-0 rounded-2xl bg-canvas px-3 py-2 font-semibold"
               />
-              <p className="mt-1 text-xs text-muted">{item.raw_line_text}</p>
-              <div className="mt-2 grid grid-cols-[1fr_1fr_1fr_auto] gap-2">
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <p className="min-w-0 text-xs text-muted">{item.raw_line_text}</p>
+                {item.needs_review ? (
+                  <span className="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                    Needs review
+                  </span>
+                ) : null}
+              </div>
+              <div className="mt-2 grid min-w-0 grid-cols-3 gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,4.5rem)_minmax(0,1fr)]">
                 <input
                   type="number"
                   step="any"
                   value={item.quantity ?? ""}
                   onChange={(e) =>
-                    updateItem(i, { quantity: e.target.value === "" ? null : Number(e.target.value) })
+                    updateItem(i, {
+                      quantity: e.target.value === "" ? null : Number(e.target.value),
+                      needs_review: false,
+                    })
                   }
                   placeholder="Qty"
-                  className="rounded-2xl bg-canvas px-3 py-2"
+                  className="min-w-0 rounded-2xl bg-canvas px-3 py-2"
                 />
                 <input
                   value={item.unit}
-                  onChange={(e) => updateItem(i, { unit: e.target.value })}
+                  onChange={(e) => updateItem(i, { unit: e.target.value, needs_review: false })}
                   placeholder="Unit"
-                  className="rounded-2xl bg-canvas px-3 py-2"
+                  className="min-w-0 rounded-2xl bg-canvas px-3 py-2"
                 />
                 <input
                   type="number"
                   step="any"
                   value={item.price ?? ""}
                   onChange={(e) =>
-                    updateItem(i, { price: e.target.value === "" ? null : Number(e.target.value) })
+                    updateItem(i, {
+                      price: e.target.value === "" ? null : Number(e.target.value),
+                      needs_review: false,
+                    })
                   }
                   placeholder="Price"
-                  className="rounded-2xl bg-canvas px-3 py-2"
+                  className="min-w-0 rounded-2xl bg-canvas px-3 py-2"
                 />
+              </div>
+              <div className="mt-2 flex justify-end">
                 <button
                   type="button"
                   onClick={() => setItems((rows) => rows.filter((_, idx) => idx !== i))}
-                  className="pressable rounded-full px-2 text-sm font-semibold text-coral-text"
+                  className="pressable rounded-full px-3 py-1.5 text-sm font-semibold text-coral-text"
                   aria-label="Delete line"
                 >
                   Delete

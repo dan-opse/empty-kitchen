@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { learnFromConfirmedReceipt } from "@/lib/learn-catalog";
 import { persistGeneration } from "@/lib/plans";
 import { createReceiptFromCapture, createReceiptFromPreset, replaceReceiptItems } from "@/lib/receipts";
 import { upsertLeftover } from "@/lib/pantry";
@@ -79,6 +80,12 @@ export async function confirmAndGenerate(input: {
 
     const confirmed = input.items.filter((i) => i.matched_ingredient_name.trim());
     await replaceReceiptItems(input.receiptId, confirmed);
+
+    try {
+      await learnFromConfirmedReceipt(confirmed);
+    } catch (error) {
+      console.error("[confirmAndGenerate] catalog learn failed:", error);
+    }
 
     const purchased = confirmed
       .filter((i) => i.quantity != null && i.quantity > 0)

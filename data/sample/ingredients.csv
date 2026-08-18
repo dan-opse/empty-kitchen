@@ -4,7 +4,7 @@ salmon,protein,high,g,"salmon fillet,atlantic salmon,fish",false
 ground turkey,protein,high,g,"turkey,turkey mince,ground turkey meat",false
 eggs,protein,medium,unit,"egg,large eggs,dozen eggs",false
 canned tuna,protein,low,g,"tuna,tuna can,chunk tuna",false
-tofu,protein,medium,g,"firm tofu,extra firm tofu",false
+tofu,protein,medium,g,"firm tofu,extra firm tofu,bean curd",false
 chickpeas,protein,low,g,"garbanzo,canned chickpeas,chickpea",false
 spinach,produce,high,g,"baby spinach,spinach leaves",false
 broccoli,produce,high,g,"broccoli florets,broccoli crown",false
@@ -13,15 +13,15 @@ zucchini,produce,high,unit,"courgette,zucchini squash",false
 tomato,produce,medium,unit,"tomatoes,roma tomato",false
 lemon,produce,medium,unit,"lemons,lemon juice",false
 mixed greens,produce,high,g,"salad mix,spring mix,lettuce",false
-cabbage,produce,medium,g,"green cabbage,napa cabbage",false
+cabbage,produce,medium,g,"green cabbage,cabbage head,round cabbage",false
 carrot,produce,medium,g,"carrots",false
 ginger,produce,medium,g,"fresh ginger,ginger root",false
 lime,produce,medium,unit,"limes,lime juice",false
 milk,dairy,high,ml,"whole milk,2% milk,gv whl mlk,whl mlk gal",false
 greek yogurt,dairy,high,g,"yogurt,plain yogurt",false
 parmesan,dairy,medium,g,"parmesan cheese,parm",false
-rice,pantry,low,g,"white rice,jasmine rice,rice dry",false
-pasta,pantry,low,g,"spaghetti,penne,noodles",false
+rice,pantry,low,g,"white rice,jasmine rice,rice dry,long grain rice",false
+pasta,pantry,low,g,"spaghetti,penne,dried pasta",false
 canned tomatoes,pantry,low,g,"crushed tomatoes,diced tomatoes,tomato can",false
 olive oil,pantry,low,ml,"evoo,extra virgin olive oil,oil",true
 soy sauce,pantry,low,ml,"shoyu,tamari",true
@@ -32,3 +32,193 @@ onion,produce,medium,unit,"yellow onion,onions",true
 butter,dairy,medium,g,"unsalted butter,salted butter",true
 sesame oil,pantry,low,ml,"toasted sesame oil",true
 flour,pantry,low,g,"all purpose flour,ap flour",true
+bok choy,produce,high,g,"pak choi,baby bok choy,bok choi,shanghai greens",false
+napa cabbage,produce,medium,g,"chinese cabbage,wong bok,won bok,napa",false
+gai lan,produce,high,g,"chinese broccoli,kai lan,kailan",false
+yu choy,produce,high,g,"yau choy,yu choy sum",false
+choy sum,produce,high,g,"choi sum,yau choy sum",false
+daikon,produce,medium,g,"white radish,lo bok,daikon radish,mooli",false
+korean radish,produce,medium,g,"mu,korean mu,mu radish",false
+water spinach,produce,high,g,"ong choy,kang kong,water convolvulus",false
+mustard greens,produce,high,g,"gai choy,chinese mustard,mustard leaf",false
+chinese eggplant,produce,medium,unit,"asian eggplant,long eggplant",false
+bitter melon,produce,medium,unit,"bitter gourd,fu qua,ampalaya",false
+long bean,produce,medium,g,"yard long bean,snake bean,chinese long bean",false
+snow peas,produce,medium,g,"snow pea,sugar snap pea,mangetout",false
+bean sprouts,produce,high,g,"bean sprout,mung bean sprout,soybean sprout",false
+bamboo shoots,produce,medium,g,"bamboo shoot,fresh bamboo",false
+water chestnut,produce,medium,g,"water chestnuts,fresh water chestnut",false
+lotus root,produce,medium,g,"lotus root slice,fresh lotus root",false
+taro,produce,medium,g,"taro root,coco yam",false
+burdock root,produce,medium,g,"gobo,burdock,gobo root",false
+baby corn,produce,medium,unit,"baby sweet corn",false
+thai basil,produce,high,g,"holy basil,horapa",false
+cilantro,produce,high,g,"coriander leaf,coriander,coriander leaves",false
+scallion,produce,medium,unit,"green onion,spring onion,negi",false
+shiso,produce,high,g,"perilla leaf,shiso leaf,japanese perilla",false
+korean perilla,produce,high,g,"perilla leaf,kkaennip,sesame leaf",false
+thai chili,produce,medium,unit,"bird chili,bird's eye chili,prik kee noo",false
+lemongrass,produce,medium,unit,"lemongrass stalk,fresh lemongrass",false
+galangal,produce,medium,g,"galanga,galangal root,blue ginger",false
+turmeric root,produce,medium,g,"fresh turmeric,turmeric",false
+japanese cucumber,produce,medium,unit,"kyuri,persian cucumber,asian cucumber",false
+shiitake mushroom,produce,medium,g,"shiitake,fresh shiitake,shitake",false
+enoki mushroom,produce,medium,g,"enoki,enokitake",false
+oyster mushroom,produce,medium,g,"oyster mush",false
+king oyster mushroom,produce,medium,g,"king oyster,eringi,king trumpet",false
+wood ear mushroom,produce,medium,g,"wood ear,black fungus,cloud ear",false
+edamame,produce,medium,g,"edamame beans,fresh edamame",false
+pandan leaf,produce,medium,unit,"pandan leaves,fresh pandan",false
+kaffir lime leaf,produce,medium,unit,"makrut lime leaf",false
+curry leaf,produce,medium,g,"fresh curry leaves",false
+chicken thigh,protein,high,g,"chicken thighs,thigh meat,boneless thigh",false
+ground pork,protein,high,g,"pork mince,minced pork,pork ground",false
+pork belly,protein,high,g,"pork belly slice,belly pork,samgyeopsal",false
+pork shoulder,protein,high,g,"pork shoulder roast,boston butt",false
+pork ribs,protein,high,g,"pork spare ribs,pork rib",false
+beef slices,protein,high,g,"beef slice,sukiyaki beef,shabu beef,thin beef",false
+beef short rib,protein,high,g,"galbi,korean short rib,flanken rib",false
+duck,protein,high,g,"duck meat,duck breast,duck leg",false
+shrimp,protein,high,g,"prawns,prawn,shrimp raw,headless shrimp",false
+squid,protein,high,g,"squid whole,squid tube,calamari fresh",false
+clams,protein,high,g,"manila clams,littleneck clams,fresh clams",false
+mussels,protein,high,g,"fresh mussels,green mussels",false
+tilapia,protein,high,g,"tilapia fillet,fresh tilapia",false
+cod fillet,protein,high,g,"cod,cod fish,cod loin",false
+octopus,protein,high,g,"octopus tentacle,fresh octopus",false
+scallops,protein,high,g,"sea scallop,fresh scallop",false
+crab,protein,high,g,"whole crab,fresh crab",false
+fish cake,protein,medium,g,"fish ball,asian fish cake,oden fish cake",false
+fish balls,protein,medium,g,"fishball,frozen fish ball",false
+chinese sausage,protein,medium,unit,"lap cheong,lop cheong,lap cheung",false
+char siu,protein,medium,g,"chinese bbq pork,char siu pork",false
+roast pork,protein,medium,g,"siu yuk,crispy roast pork",false
+silken tofu,protein,medium,g,"soft tofu,silken bean curd",false
+pressed tofu,protein,medium,g,"firm pressed tofu,dried tofu block",false
+egg tofu,protein,medium,unit,"japanese egg tofu,tamago tofu",false
+fried tofu,protein,medium,g,"fried bean curd,tofu puff,aburaage",false
+tofu puff,protein,medium,unit,"fried tofu puff,bean curd puff",false
+smoked tofu,protein,medium,g,"smoked bean curd,pressed smoked tofu",false
+tofu skin,protein,low,g,"bean curd sheet,yuba,dried tofu skin",false
+tempeh,protein,medium,g,"tempe,fried tempeh",false
+natto,protein,medium,g,"fermented soybean,natto beans",false
+dried shrimp,protein,low,g,"dried prawn,hakkosen shrimp",false
+imitation crab,protein,medium,g,"crab stick,kani,kamaboko crab",false
+quail eggs,protein,medium,unit,"quail egg",false
+century egg,protein,low,unit,"preserved egg,pei dan",false
+salted egg,protein,low,unit,"salted duck egg",false
+liver,protein,high,g,"pork liver,chicken liver",false
+beef tripe,protein,high,g,"honeycomb tripe,beef stomach",false
+sticky rice,pantry,low,g,"glutinous rice,sweet rice,mochi rice",false
+sushi rice,pantry,low,g,"short grain rice,japanese rice",false
+rice noodles,pantry,low,g,"rice stick,banh pho,pho noodles,rice noodle dry",false
+rice vermicelli,pantry,low,g,"vermicelli rice,mi fen,thin rice noodle",false
+udon noodles,pantry,low,g,"udon,frozen udon,fresh udon",false
+ramen noodles,pantry,low,g,"ramen,fresh ramen,chuka men",false
+soba noodles,pantry,low,g,"soba,buckwheat noodle,dried soba",false
+glass noodles,pantry,low,g,"cellophane noodle,mung bean noodle,bean thread",false
+chow mein noodles,pantry,low,g,"chow mein,chinese egg noodle",false
+hokkien noodles,pantry,low,g,"hokkien mee noodle,fresh hokkien",false
+fresh noodles,pantry,medium,g,"fresh noodles,chow mein fresh",false
+wonton wrapper,pantry,low,unit,"wonton skin,wonton pastry",false
+dumpling wrapper,pantry,low,unit,"gyoza wrapper,jiaozi wrapper,potsticker wrapper",false
+rice paper,pantry,low,unit,"rice paper wrapper,banh trang",false
+egg roll wrapper,pantry,low,unit,"spring roll pastry,egg roll skin",false
+panko,pantry,low,g,"panko crumbs,japanese breadcrumbs",false
+corn starch,pantry,low,g,"cornstarch,corn flour",true
+potato starch,pantry,low,g,"potato flour,katakuriko",true
+miso paste,pantry,low,g,"miso,white miso,red miso",false
+gochujang,pantry,low,g,"korean chili paste,hot pepper paste",false
+doubanjiang,pantry,low,g,"chili bean paste,sichuan bean paste,douban",false
+hoisin sauce,pantry,low,ml,"hoisin,bbq sauce chinese",false
+oyster sauce,pantry,low,ml,"oyster flavoured sauce",false
+fish sauce,pantry,low,ml,"nam pla,nuoc mam,patis",false
+rice vinegar,pantry,low,ml,"rice wine vinegar,sushi vinegar",false
+black vinegar,pantry,low,ml,"chinkiang vinegar,chinese black vinegar",false
+mirin,pantry,low,ml,"sweet rice wine,aji mirin",false
+cooking sake,pantry,low,ml,"sake,rice wine cooking",false
+shaoxing wine,pantry,low,ml,"shaoxing,rice cooking wine chinese",false
+coconut milk,pantry,low,ml,"coconut milk can,coco milk",false
+coconut cream,pantry,low,ml,"coconut cream can,cream of coconut",false
+curry paste,pantry,low,g,"thai curry paste,red curry paste,green curry paste",false
+laksa paste,pantry,low,g,"laksa curry paste",false
+tom yum paste,pantry,low,g,"tom yum soup paste",false
+chili oil,pantry,low,ml,"la yu,hot chili oil,chilli oil",false
+sriracha,pantry,low,ml,"sriracha sauce,rooster sauce",false
+sambal,pantry,low,g,"sambal oelek,sambal paste,chili paste",false
+sesame paste,pantry,low,g,"chinese sesame paste,sesame sauce",false
+sweet chili sauce,pantry,low,ml,"thai sweet chili,sweet chilli",false
+plum sauce,pantry,low,ml,"duck sauce,plum dipping sauce",false
+black bean sauce,pantry,low,g,"black bean garlic sauce,fried black bean",false
+xo sauce,pantry,low,g,"xo chili sauce",false
+satay sauce,pantry,low,ml,"satay paste,peanut satay",false
+tamarind paste,pantry,low,g,"tamarind concentrate,assam paste",false
+ssamjang,pantry,low,g,"korean bbq dipping sauce",false
+doenjang,pantry,low,g,"korean soybean paste",false
+kimchi paste,pantry,low,g,"kimchi seasoning,kimchi base",false
+buldak sauce,pantry,low,ml,"korean fire chicken sauce",false
+japanese mayonnaise,pantry,low,ml,"kewpie mayo,kewpie",false
+yuzu juice,pantry,low,ml,"yuzu,yuzu citrus",false
+yuzu kosho,pantry,low,g,"yuzu pepper paste",false
+peanut oil,pantry,low,ml,"groundnut oil",false
+coconut oil,pantry,low,ml,"coconut cooking oil",false
+palm oil,pantry,low,ml,"red palm oil",false
+dashi,pantry,low,g,"dashi powder,bonito dashi,fish stock powder",false
+bonito flakes,pantry,low,g,"katsuobushi,bonito flake",false
+chicken broth,pantry,low,ml,"chicken stock,chicken bouillon",false
+beef broth,pantry,low,ml,"beef stock,beef bouillon",false
+dried shiitake,pantry,low,g,"dried shitake,dried mushroom shiitake",false
+dried seaweed,pantry,low,g,"dried kelp,kombu,dashi kombu",false
+nori,pantry,low,unit,"nori sheet,sushi nori",false
+wakame,pantry,low,g,"dried wakame,wakame seaweed",false
+dried wood ear,pantry,low,g,"dried black fungus,dried wood ear mushroom",false
+fermented black beans,pantry,low,g,"douchi,salted black bean",false
+kimchi,pantry,medium,g,"kim chee,korean kimchi",false
+pickled radish,pantry,low,g,"danmuji,yellow pickled radish",false
+pickled mustard,pantry,low,g,"preserved mustard,sui mi cai,zha cai",false
+preserved vegetable,pantry,low,g,"preserved mustard stem,dong cai",false
+pickled ginger,pantry,low,g,"gari,sushi ginger",false
+pickled plum,pantry,low,unit,"umeboshi,pickled plum japanese",false
+japanese pickles,pantry,low,g,"tsukemono,pickled radish japanese",false
+canned bamboo,pantry,low,g,"bamboo shoots canned,sliced bamboo",false
+canned water chestnut,pantry,low,g,"water chestnut canned",false
+canned straw mushroom,pantry,low,g,"straw mushroom canned",false
+canned baby corn,pantry,low,g,"baby corn canned",false
+canned jackfruit,pantry,low,g,"young jackfruit canned",false
+instant noodles,pantry,low,unit,"ramen instant,cup noodles,instant ramen",false
+frozen dumplings,pantry,low,unit,"jiaozi frozen,gyoza frozen,potsticker frozen",false
+frozen spring rolls,pantry,low,unit,"spring roll frozen,chun juan",false
+bao buns,pantry,low,unit,"steamed bao,mantou bao",false
+mantou,pantry,low,unit,"chinese steamed bun,white bun",false
+rice cake,pantry,low,g,"korean rice cake,tteok,glutinous rice cake",false
+mochi,pantry,low,unit,"rice cake mochi,daifuku mochi",false
+red bean paste,pantry,low,g,"anko,sweet red bean paste",false
+soy milk,pantry,low,ml,"soymilk,soya milk",false
+konnyaku,pantry,low,g,"konjac,konnyaku cake",false
+tempura mix,pantry,low,g,"tempura batter,tempura flour",false
+curry roux,pantry,low,g,"japanese curry cube,curry block,golden curry",false
+matcha powder,pantry,low,g,"green tea powder,matcha",false
+palm sugar,pantry,low,g,"gula melaka,coconut palm sugar",false
+rock sugar,pantry,low,g,"chinese rock sugar,crystal sugar",false
+brown sugar,pantry,low,g,"dark brown sugar",true
+honey,pantry,low,ml,"honey pure",true
+five spice,pantry,low,g,"five spice powder,chinese five spice",true
+white pepper,pantry,low,g,"ground white pepper",true
+star anise,pantry,low,unit,"whole star anise",true
+sichuan peppercorn,pantry,low,g,"szechuan pepper,sichuan pepper",true
+dried chili,pantry,low,g,"dried red chili,dried chilli whole",true
+chili flakes,pantry,low,g,"korean chili flakes,gochugaru",false
+wasabi,pantry,low,g,"wasabi paste,wasabi tube",false
+sesame seeds,pantry,low,g,"toasted sesame,sesame seed",true
+fried shallot,pantry,low,g,"fried onion,crispy shallot",false
+fried garlic,pantry,low,g,"crispy garlic,fried garlic chips",false
+rice seasoning,pantry,low,g,"furikake,rice seasoning furikake",false
+luncheon meat,pantry,low,g,"spam,luncheon pork",false
+red dates,pantry,low,g,"jujube,dried red date,chinese date",false
+goji berries,pantry,low,g,"wolfberry,dried goji",false
+lotus seed,pantry,low,g,"dried lotus seed",false
+dried lily bulb,pantry,low,g,"dried lily flower,bai he",false
+seaweed salad,produce,medium,g,"wakame salad,korean seaweed salad",false
+salmon roe,protein,high,g,"ikura,salmon ikura",false
+mentaiko,protein,medium,g,"spicy cod roe,mentaiko paste",false
+tobiko,protein,low,g,"flying fish roe",false

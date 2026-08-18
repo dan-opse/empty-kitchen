@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { extractModel, openaiConfigured, summaryModel } from "@/lib/env";
+import { guessIngredientName } from "@/lib/match-ingredient";
 import type { DraftLine, Ingredient } from "@/lib/types";
 
 function client(): OpenAI {
@@ -135,7 +136,7 @@ export async function extractGroceryLines(input: {
   const items: DraftLine[] = (parsed.items ?? [])
     .map((item) => {
       const name = item.matched_ingredient_name;
-      const matched = name && names.has(name) ? name : guessName(item.raw_line_text, input.ingredients);
+      const matched = name && names.has(name) ? name : guessIngredientName(item.raw_line_text, input.ingredients);
       return {
         raw_line_text: item.raw_line_text,
         matched_ingredient_name: matched ?? "",
@@ -168,16 +169,6 @@ export async function polishSummary(draft: string): Promise<string> {
   }
 }
 
-function guessName(raw: string, ingredients: Ingredient[]): string | null {
-  const hay = raw.toLowerCase();
-  for (const ing of ingredients) {
-    if (hay.includes(ing.ingredient_name.toLowerCase())) return ing.ingredient_name;
-    const aliases = ing.aliases.split(",").map((a) => a.trim().toLowerCase()).filter(Boolean);
-    if (aliases.some((a) => a.length > 2 && hay.includes(a))) return ing.ingredient_name;
-  }
-  return null;
-}
-
 function fallbackExtract(input: {
   ingredients: Ingredient[];
   source: "image" | "pdf" | "manual";
@@ -189,7 +180,7 @@ function fallbackExtract(input: {
     .map((t) => t.trim())
     .filter(Boolean);
   const items: DraftLine[] = tokens.map((token) => {
-    const matched = guessName(token, input.ingredients);
+    const matched = guessIngredientName(token, input.ingredients);
     const ing = input.ingredients.find((i) => i.ingredient_name === matched);
     return {
       raw_line_text: token,
